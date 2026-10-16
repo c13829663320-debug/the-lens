@@ -39,3 +39,13 @@
 - 回环媒体请求 `Range: bytes=0-31` 返回 206、32 字节；远端 MP4 SHA-256 与本地一致：`1eae4cc2bb473c8214ecfb9378a0fb449318899134a3ea5f60df390c11ea871f`。
 - 这验证了 ECS 本机服务和部署内容；DNS NXDOMAIN、HTTP 备案拦截及 443 不通仍阻止公网/微信端访问。
 
+## 2026-10-17 只读复验
+
+使用现有部署密钥及隔离 `work/keys/known_hosts` 执行 SSH 只读检查，没有修改或重启服务：
+
+- `systemctl is-active the-lens.service` 返回 `active`；回环 `/health` 返回 `{"ok":true,"service":"the-lens-media","version":1}`。
+- 回环 `/api/media-manifest` 返回 S01 `draft_needs_art_review`、`canonical:false`；尺寸、时长、字节数及 SHA-256 均与本地 manifest 一致。
+- 回环 MP4 `Range: bytes=0-31` 返回 `206 Partial Content`、32 bytes，`Content-Range: bytes 0-31/3993189`。
+- 本地与远端 `server.mjs`、manifest、MP4 的 SHA-256 均一致，分别为 `f03dc83a825051bb554ad5c1e435edcb967d90480c3e60bd755a357c02112253`、`bf1f0a350bee27f1bb7b11046b9d535e7f07df7203d37ddfe9103fbefa7517b0`、`1eae4cc2bb473c8214ecfb9378a0fb449318899134a3ea5f60df390c11ea871f`。
+- 同日公网检查中，本地 DNS 未解析出 `lens.xscxm.asia` 地址，TCP 443 连接失败。ECS 回环状态正常不代表公网或微信端可访问；S01 仍是待审草稿，没有启用客户端远程播放。
+
