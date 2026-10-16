@@ -1,7 +1,7 @@
 # 《透镜 THE LENS》V5.0 项目基线与并行开发状态表
 
 记录时间：2026-10-17（Asia/Shanghai）
-本次文档交付基于父提交：`61c59e4`（`main`）；代码核查基线：`9f84f30`，之后仅有文档同步提交。当前交付已本地提交，GitHub 推送返回 `Repository not found`；复验未改源代码，详情见 [V5.0-STAGE-DELIVERY.md](V5.0-STAGE-DELIVERY.md)。
+本次总控复核的代码基线为 `9f84f30`，之后提交均为文档同步；当前阶段交付单已更新并在本地提交，GitHub 推送返回 `Repository not found`。本轮复验未改源代码，详情见 [V5.0-STAGE-DELIVERY.md](V5.0-STAGE-DELIVERY.md)。
 仓库：`https://github.com/c13829663320-debug/the-lens.git`
 
 本表根据共享工作区、Git 历史、阶段交付文档和本轮实际验证更新。当前阶段交付文件为 [V5.0-STAGE-DELIVERY.md](V5.0-STAGE-DELIVERY.md)。其他窗口的对话不可直接读取；未有交付证据时标注为待同步。
