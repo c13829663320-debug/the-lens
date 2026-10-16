@@ -53,9 +53,9 @@ D:\微信web开发者工具\wechatidecli.cmd open --project <work\wechat-cli-che
 D:\微信web开发者工具\wechatidecli.cmd preview --project <work\wechat-cli-check-v3> --port 41915 --qr-format image --qr-output <work\wechat-cli-check-v3\preview-qr.png> --info-output <work\wechat-cli-check-v3\preview-info.json>
 ```
 
-两条命令均返回退出码 `0`。在干净临时副本 `work/wechat-cli-check-v5` 上重新执行后，CLI 报告总包 `3,747,337` bytes。临时副本只包含 58 个运行时文件和项目配置，没有把二维码或报告 JSON 放入项目根目录。
+两条命令均返回退出码 `0`。在干净临时副本 `work/wechat-cli-source-v1` 上按正式工程目录结构重新执行后，CLI 报告总包 `3,747,337` bytes。该副本保留 `miniprogramRoot: "./dist/wechat/"`，只将 AppID 改为本机已登录的测试 AppID，并关闭 URL 校验；二维码和报告 JSON 写在项目目录外。
 
-复核结果：`dist/wechat/` 含 58 个运行时文件、总计 `3,747,115` bytes；临时副本对应的 58 个运行时文件均与构建产物 SHA-256 一致，另有 `project.config.json` 共 `3,747,375` bytes 原始文件。此前 `work/wechat-cli-check-v3` 将两个二维码和两个报告 JSON 放在项目根目录，CLI 报告因此变为 `3,794,468` bytes；该值不代表当前运行时包。后续以干净副本的 `3,747,337` bytes 作为本次 CLI 复验值，以 `npm run build` 的 `runtimeBytes: 3,747,115` 作为可复算的运行时文件大小。
+复核结果：`dist/wechat/` 含 58 个运行时文件、总计 `3,747,115` bytes；临时副本对应的运行时文件均与构建产物 SHA-256 一致，源工程配置文件另计。此前 `work/wechat-cli-check-v3` 将两个二维码和两个报告 JSON 放在项目根目录，CLI 报告因此变为 `3,794,468` bytes；该值不代表当前运行时包。后续以正式目录结构副本的 `3,747,337` bytes 作为本次 CLI 复验值，以 `npm run build` 的 `runtimeBytes: 3,747,115` 作为可复算的运行时文件大小。
 
 此结果证明当前构建可被该版本开发者工具打开并编译预览，不证明手机扫码、生产 AppID、合法域名、真机全流程或远程 CG 播放通过。
 
