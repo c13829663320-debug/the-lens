@@ -76,4 +76,4 @@
 - `npm run build`：通过；微信运行时 3,747,115 bytes，第三方运行时依赖 0。
 - `npm --prefix server test`：2/2 通过；`git diff --check`：通过。
 - 媒体审核门槛为客户端本地测试结果；当前线上域名不可访问，微信端视频播放没有通过实际设备验收。
-- 微信开发者工具 2.02.2608070：在隔离临时项目上以已登录 AppID 执行 CLI `open` 与 `preview`，均退出码 0；报告包大小 3,747,337 bytes。正式源工程仍为 `touristappid`，这不是手机扫码或真机运行结果，详见 `docs/WECHAT-CLI-VERIFICATION.md`。
+- 微信开发者工具 2.02.2608070：在隔离临时项目上以已登录 AppID 执行 CLI `open` 与 `preview`，均退出码 0；留存的最新 CLI 报告值为 3,794,468 bytes。CLI 包统计口径尚未与项目原始文件总量核实，运行时文件复算为 3,747,115 bytes。正式源工程仍为 `touristappid`，这不是手机扫码或真机运行结果，详见 `docs/WECHAT-CLI-VERIFICATION.md`。
