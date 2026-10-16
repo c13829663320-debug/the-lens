@@ -91,6 +91,8 @@
 - `npm run check`：`scenes: 10`、`backgroundReferences: 16`、`missing: 0`。
 - `npm run build`：成功，生成 `dist/browser.js` 和 `dist/wechat/`；本轮输出 `runtimeBytes: 3737573`、`dependencyCount: 0`。构建反映了工作树中其他窗口当前未提交的源文件，不能据此宣称其已完成集成。
 - `npm --prefix server test`：2/2 通过，覆盖 Range、HEAD、manifest 过滤、错误码、CORS 条件和路径穿越。
+- 只读资源映射核验：运行时映射 34 个唯一引用，`missingReferences: 0`；43 个映射运行时文件 `hashMismatches: 0`、`invalidMappedDimensions: 0`；记录的压缩图片为 `3363394` bytes，音频为 `293892` bytes。
+- 只读媒体核验：S01 manifest 文件存在，实际字节数 `3993189` 与登记一致，SHA-256 匹配；状态为 `draft_needs_art_review`，`canonical: false`。
 - 资源审计记录：`docs/ASSET-AUDIT.md` 记载 43 张图片完整解码、转换图重解码、31 条原始清单 SHA/尺寸核对和 3 个 WAV 重解码通过；本单不把这些记录扩展成微信真机听感结论。
 - 浏览器视觉记录：1280x720 横屏和 390x844 竖屏 HUD 无按钮重叠；人工流程只到 S09 洞穴前三条线索，绘画、观星和片尾尚未走完。
 - 微信 CLI 记录：临时合法 AppID 副本的 `open`/`preview` 返回 0；交付工程仍是 `touristappid`，没有真机扫码、音频、远程 CG 或正式上传证据。
