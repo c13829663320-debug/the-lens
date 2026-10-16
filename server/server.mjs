@@ -1,5 +1,6 @@
 import http from 'node:http';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { realpath, stat, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +11,7 @@ const TYPES = {
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
   '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav',
 };
+const STATUSES = new Set(['pending_generation', 'draft_needs_art_review', 'approved', 'rejected']);
 
 function sendJson(req, res, status, value, extra = {}) {
   const body = Buffer.from(JSON.stringify(value));
@@ -36,6 +38,16 @@ async function mediaFile(root, relative) {
     const info = await stat(candidate);
     return info.isFile() ? { candidate, info } : null;
   } catch { return null; }
+}
+
+function sha256File(file) {
+  return new Promise((resolve, reject) => {
+    const hash = createHash('sha256');
+    const stream = createReadStream(file);
+    stream.on('data', chunk => hash.update(chunk));
+    stream.on('error', reject);
+    stream.on('end', () => resolve(hash.digest('hex')));
+  });
 }
 
 export function parseRange(value, size) {
@@ -88,10 +100,26 @@ export function createMediaServer({ mediaRoot = path.join(MODULE_DIR, 'media'), 
           if (!entry || typeof entry.id !== 'string' || !/^[a-z0-9_-]{1,64}$/.test(entry.id) || ids.has(entry.id) || typeof entry.file !== 'string') continue;
           const found = await mediaFile(mediaRoot, entry.file);
           if (!found) continue;
+          if (entry.status !== undefined && (typeof entry.status !== 'string' || !STATUSES.has(entry.status))) continue;
+          if (entry.status === 'rejected') continue;
+          if (entry.canonical !== undefined && typeof entry.canonical !== 'boolean') continue;
+          if (entry.canonical === true && entry.status !== 'approved') continue;
+          if (entry.bytes !== undefined && (!Number.isSafeInteger(entry.bytes) || entry.bytes !== found.info.size)) continue;
+          let sha256;
+          if (entry.sha256 !== undefined) {
+            if (typeof entry.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(entry.sha256)) continue;
+            try { sha256 = await sha256File(found.candidate); } catch { continue; }
+            if (sha256.toLowerCase() !== entry.sha256.toLowerCase()) continue;
+          }
           ids.add(entry.id);
           assets.push({ id: entry.id, url: `/media/${entry.file}`, bytes: found.info.size,
             type: TYPES[path.extname(entry.file).toLowerCase()],
-            ...(typeof entry.caption === 'string' ? { caption: entry.caption.slice(0, 300) } : {}) });
+            ...(typeof entry.caption === 'string' ? { caption: entry.caption.slice(0, 300) } : {}),
+            ...(typeof entry.status === 'string' ? { status: entry.status } : {}),
+            ...(typeof entry.canonical === 'boolean' ? { canonical: entry.canonical } : {}),
+            ...(sha256 ? { sha256 } : {}),
+            ...(['width', 'height', 'durationMs'].every(key => Number.isSafeInteger(entry[key]) && entry[key] > 0)
+              ? { width: entry.width, height: entry.height, durationMs: entry.durationMs } : {}) });
         }
         return sendJson(req, res, 200, { version: 1, assets });
       }

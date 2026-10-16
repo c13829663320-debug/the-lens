@@ -37,7 +37,7 @@ docker compose up -d
 curl -fsS http://127.0.0.1:8080/health
 ```
 
-先检查已有 Nginx 配置，在独立 server block 安装 `nginx/the-lens.conf.example`，将示例域名替换为 `lens.xscxm.asia` 和真实证书路径后 `nginx -t && systemctl reload nginx`。首次只确认 `https://lens.xscxm.asia/health` 返回 `{"ok":true,...}`，再把该域名配置到微信后台业务域名/下载域名（需按微信平台当前规则完成校验）。将 `ALLOWED_ORIGIN` 设为实际小游戏 WebView/预览来源；微信原生请求通常不依赖浏览器 CORS，未知 Origin 不回 CORS 头。部署中不得覆盖根域名现有站点，也不先占用未经检查的端口。
+先检查已有 Nginx 配置，在独立 server block 安装 `server/nginx/the-lens.conf.example`；示例已经指向 `lens.xscxm.asia` 和 ECS 上的 `127.0.0.1:8790`，仍须替换为真实证书路径后执行 `nginx -t && systemctl reload nginx`。systemd 可参考 `server/systemd/the-lens.service.example`，其中 `User=the-lens`、媒体目录只读、端口 `8790` 都必须在主机上逐项核对。首次只确认 `https://lens.xscxm.asia/health` 返回 `{"ok":true,...}`，再把该域名配置到微信后台业务域名/下载域名（需按微信平台当前规则完成校验）。将 `ALLOWED_ORIGIN` 设为实际小游戏 WebView/预览来源；微信原生请求通常不依赖浏览器 CORS，未知 Origin 不回 CORS 头。部署中不得覆盖根域名现有站点，也不先占用未经检查的端口。
 
 ## 安全与运维
 

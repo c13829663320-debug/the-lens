@@ -1,0 +1,25 @@
+[Unit]
+Description=THE LENS read-only media service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=the-lens
+Group=the-lens
+WorkingDirectory=/opt/the-lens/server
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8790
+Environment=MEDIA_ROOT=/opt/the-lens/server/media
+ExecStart=/usr/bin/node /opt/the-lens/server/server.mjs
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/opt/the-lens/server/media
+
+[Install]
+WantedBy=multi-user.target

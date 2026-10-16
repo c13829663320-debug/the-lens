@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import os from 'node:os';
 import http from 'node:http';
@@ -21,8 +22,13 @@ test('media endpoints serve real files, byte ranges, HEAD and a filtered manifes
   await mkdir(mediaRoot);
   await writeFile(path.join(mediaRoot, 'sample.mp4'), Buffer.from('0123456789')); // Transport fixture; not a generated CG.
   await writeFile(path.join(directory, 'secret.mp4'), 'outside root');
+  const sampleHash = createHash('sha256').update('0123456789').digest('hex');
   await writeFile(path.join(mediaRoot, 'manifest.json'), JSON.stringify({ version: 1, assets: [
     { id: 'opening', file: 'sample.mp4', caption: 'Transport test' },
+    { id: 'approved', file: 'sample.mp4', status: 'approved', canonical: true, bytes: 10, sha256: sampleHash, width: 1280, height: 720, durationMs: 1000 },
+    { id: 'bad-hash', file: 'sample.mp4', status: 'approved', canonical: true, sha256: '0'.repeat(64) },
+    { id: 'bad-canonical', file: 'sample.mp4', status: 'draft_needs_art_review', canonical: true },
+    { id: 'rejected', file: 'sample.mp4', status: 'rejected' },
     { id: 'missing', file: 'missing.mp4' }, { id: 'escape', file: '../secret.mp4' },
     { id: 'opening', file: 'sample.mp4' },
   ] }));
@@ -32,8 +38,12 @@ test('media endpoints serve real files, byte ranges, HEAD and a filtered manifes
   try {
     assert.equal((await fetch(`${base}/health`)).status, 200);
     const manifest = await (await fetch(`${base}/api/media-manifest`)).json();
-    assert.deepEqual(manifest.assets.map(a => a.id), ['opening']);
+    assert.deepEqual(manifest.assets.map(a => a.id), ['opening', 'approved']);
     assert.equal(manifest.assets[0].bytes, 10);
+    assert.equal(manifest.assets[1].status, 'approved');
+    assert.equal(manifest.assets[1].canonical, true);
+    assert.equal(manifest.assets[1].sha256, sampleHash);
+    assert.equal(manifest.assets[1].durationMs, 1000);
     const partial = await fetch(`${base}/media/sample.mp4`, { headers: { Range: 'bytes=3-6' } });
     assert.equal(partial.status, 206);
     assert.equal(partial.headers.get('content-range'), 'bytes 3-6/10');

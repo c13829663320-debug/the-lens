@@ -4,6 +4,13 @@
     {
       "id": "cg_s01_reveal",
       "file": "cg_s01_reveal_720p_v1.mp4",
+      "status": "draft_needs_art_review",
+      "canonical": false,
+      "bytes": 3993189,
+      "sha256": "1eae4cc2bb473c8214ecfb9378a0fb449318899134a3ea5f60df390c11ea871f",
+      "width": 1280,
+      "height": 720,
+      "durationMs": 8042,
       "caption": "商场显影 · CG创作草稿。建筑构图与原场景不同，仅供氛围预览，待美术确认。"
     }
   ]

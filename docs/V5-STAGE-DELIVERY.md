@@ -7,6 +7,7 @@
 - 当前工程可运行原生 Canvas 微信小游戏和浏览器预览，已有 S10→S01→S02→S06→S03→S04→S05→S07→S08→S09 的章节模型、透镜模式/电量、观察门槛、固定救援因果、洞穴绘画与本地存档恢复。
 - 已有场景资源映射和运行时压缩资源；`npm run check` 当前报告 10 个场景、16 个背景引用、缺失 0。
 - 共享媒体服务提供只读 `GET/HEAD /health`、`/api/media-manifest` 和 `/media/<filename>`，支持单一字节 Range、路径穿越拒绝、未知扩展名拒绝和 manifest 中缺失文件过滤。
+- manifest 条目现在可携带 `status`、`canonical`、`bytes`、`sha256`、尺寸和时长元数据；服务会校验文件大小/hash，拒绝 `rejected` 条目，并禁止未 `approved` 的条目标记 `canonical`。
 - `server/media/cg_s01_reveal_720p_v1.mp4` 是当前唯一可验证的 CG 文件（约 3,993,189 bytes，1280×720、24fps、约 8.04 秒、H.264/AAC）。它仍为 `draft_needs_art_review`，建筑构图与 canonical S01 不同；没有改成 canonical，也没有由 `data/media.js` 远程启用。
 - `docs/CG-SHOTLIST.md` 已记录 S10、S02、S05、S09 和片尾镜头表、提示词骨架、版本命名、审核清单及 pending/draft/approved 状态规则；待生成镜头没有占位媒体文件。
 - 服务端运行基线已与真实 ECS 记录对齐为 Node 20；当前域名、HTTPS、微信合法域名和真机结论仍按 `docs/DEPLOY-STATUS.md` 标为待确认。
@@ -33,10 +34,15 @@
 - `docs/TEST-REPORT.md`
 - `server/Dockerfile`
 - `server/package.json`
+- `server/media/manifest.json`
+- `server/nginx/the-lens.conf.example`
+- `server/server.mjs`
+- `server/systemd/the-lens.service.example`（新增）
+- `server/test/server.test.mjs`
 - `tests/game-touch.test.js`
 - `ui/game.js`
 
-当前工作树在交付前为干净状态。本窗口没有改动 `server/server.mjs`、`server/test/server.test.mjs`、`server/media/manifest.json` 或 `data/media.js`。任务开始时曾观察到其他窗口的 `data/chapter.js` 未提交变化；本窗口没有覆盖或合并该变化，当前基线也不把它列为工作树未提交项。
+当前工作树在交付前为干净状态。本窗口没有改动 `data/media.js`、`data/chapter.js`、`ui/game.js` 或人物剧情逻辑。任务开始时曾观察到其他窗口的 `data/chapter.js` 未提交变化；本窗口没有覆盖或合并该变化，当前基线也不把它列为工作树未提交项。
 
 ## 4. 使用或新增的公共接口
 
@@ -78,8 +84,8 @@
 在收到上述同步结果前，本窗口不修改公共客户端模块。后续若继续后端/资源管线，候选文件为：
 
 - `server/media/manifest.json`：仅登记实际存在、hash/尺寸/审核状态齐全的文件。
-- `server/server.mjs`、`server/test/server.test.mjs`：如需补充 manifest 元数据验证或健康检查测试，先保持向后兼容。
-- `server/nginx/the-lens.conf.example`、`server/systemd/the-lens.service.example`：补齐与真实 ECS `127.0.0.1:8790`、`lens.xscxm.asia` 的部署示例。
+- `server/server.mjs`、`server/test/server.test.mjs`：继续保持 manifest 元数据验证、Range 和健康检查接口向后兼容。
+- `server/nginx/the-lens.conf.example`、`server/systemd/the-lens.service.example`：根据真实 ECS 证据核对 `127.0.0.1:8790`、`lens.xscxm.asia` 和证书路径。
 - `docs/ALIYUN.md`、`docs/DEPLOY-STATUS.md`：只记录有命令输出或控制台证据的 DNS、HTTPS、微信和真机状态。
 - `docs/CG-GENERATION.md`、`docs/CG-SHOTLIST.md`：随实际生成/审核结果更新，不把计划状态改成完成。
 
