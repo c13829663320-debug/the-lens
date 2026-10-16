@@ -7,7 +7,7 @@
 - **当前公网媒体服务不可用/未验证**：历史检查曾通过 IP/Host 验证健康、清单和 Range；2026-10-17 最新探测显示 `lens.xscxm.asia` 在本地及公共 DNS 均为 NXDOMAIN，HTTP 被阿里云备案拦截（403），443 不可连接。需要域名/备案负责人修复后复测 DNS、HTTPS 与 Range。
 - **CG 尚未接入**：Seedance 任务 `task_5ZmtlE4uw1pl4zv8oehX6gzdUlnZ68p9` 已报告完成，草稿已下载到 `server/media/cg_s01_reveal_720p_v1.mp4` 并通过 ffprobe/ffmpeg 基础校验；草稿文件和 manifest 已部署到 ECS 并核对 hash。接触表提示其构图与 canonical S01 不同，尚未完成人工剧情/画面批准，不能进入正式客户端播放。
 - **微信开发者工具/真机尚未完整验收**：2026-10-17 已从当前最新 `dist/wechat` 创建隔离临时项目，使用已登录 AppID `wx2d93fdfdf96aa297` 执行 CLI `open` 与 `preview`，两项退出码均为 0，包大小 `3,747,337` bytes。交付工程仍为 `touristappid` 占位值，尚无手机扫码运行、设备全流程录屏或真机媒体播放证据。详见 `docs/WECHAT-CLI-VERIFICATION.md`。
-- **GitHub 远程尚未可写/访问**：远程为 `https://github.com/c13829663320-debug/the-lens.git`；本轮 `git ls-remote origin HEAD` 与 `git push origin main` 均返回 `Repository not found`。本地源代码基线 `9f84f30` 和阶段文档提交 `82bd6c9` 尚未推送；需确认仓库地址和访问权限后重试。
+- **GitHub 远程尚未可写/访问**：远程为 `https://github.com/c13829663320-debug/the-lens.git`；最新 `git push origin main` 返回 `Repository not found`，本地阶段交付提交尚未推送。需确认仓库地址或访问权限后重试。
 
 ## 需要用户/部署方提供
 
