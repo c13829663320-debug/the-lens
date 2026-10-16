@@ -1,11 +1,13 @@
-# 微信开发者工具 CLI 验证记录
+# 微信开发者工具 CLI 验证记录（含历史快照和当前复验）
 
 日期：2026-10-17（Asia/Shanghai）  
 工具：微信开发者工具 2.02.2608070（`D:\微信web开发者工具\微信开发者工具.exe`）  
 CLI：`D:\微信web开发者工具\wechatidecli.cmd`  
 CLI HTTP 服务：`http://127.0.0.1:41915`  
 
-## 已执行
+## 历史 CLI v2 快照
+
+以下记录对应早期构建快照；当前构建结果见文末的“2026-10-17 当前构建复验”。
 
 工具已处于登录状态，`islogin --port 41915` 返回 `{"login":true}`。为避免修改交付工程的占位配置，先将 `outputs/the-lens` 复制到临时目录：
 
@@ -39,4 +41,19 @@ D:\微信web开发者工具\wechatidecli.cmd preview --project <work\\wechat-cli
 - 上述成功结果证明：在一个使用合法 AppID 的临时副本上，微信开发者工具能够打开项目并完成预览编译，包大小约 3.73 MB。
 - 当前没有微信真机扫码运行、触屏全流程、音频播放、远程 CG 合法域名或正式上传结果，因此这些项目仍属于未验证项。
 - `auto` 仅启用开发者工具自动化能力；本次未将其当作真机测试或完整游戏流程测试。
+
+## 2026-10-17 当前构建复验
+
+从当前已构建的 `dist/wechat/` 复制运行时文件到隔离临时项目 `work/wechat-cli-check-v3`，并在临时配置中设置 `miniprogramRoot: "./"`、当前登录 AppID `wx2d93fdfdf96aa297` 和 `urlCheck: false`。交付源工程未改，仍使用 `touristappid`。
+
+执行：
+
+```powershell
+D:\微信web开发者工具\wechatidecli.cmd open --project <work\wechat-cli-check-v3> --port 41915
+D:\微信web开发者工具\wechatidecli.cmd preview --project <work\wechat-cli-check-v3> --port 41915 --qr-format image --qr-output <work\wechat-cli-check-v3\preview-qr.png> --info-output <work\wechat-cli-check-v3\preview-info.json>
+```
+
+两条命令均返回退出码 `0`。当前 CLI 报告总包 `3,747,337` bytes（约 3.6 MB），并生成临时预览二维码和信息 JSON。该数据对应微信开发者工具编译的临时副本；`npm run build` 报告的运行时大小为 3,747,115 bytes，两者统计口径不同。
+
+此结果证明当前构建可被该版本开发者工具打开并编译预览，不证明手机扫码、生产 AppID、合法域名、真机全流程或远程 CG 播放通过。
 

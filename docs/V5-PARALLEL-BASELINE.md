@@ -1,7 +1,7 @@
 # 《透镜 THE LENS》V5.0 项目基线与并行开发状态表
 
 记录时间：2026-10-17（Asia/Shanghai）
-本次同步起始基线：`dde00ec`（`main`；本地预览 `http://127.0.0.1:53438/` 已探测返回 HTTP 200）
+代码核查基线：`9f84f30`（`main`）。本阶段仅同步文档，没有改动源代码；文档同步路径见 [V5.0-STAGE-DELIVERY.md](V5.0-STAGE-DELIVERY.md)。
 仓库：`https://github.com/c13829663320-debug/the-lens.git`
 
 本表根据共享工作区、Git 历史、阶段交付文档和本轮实际验证更新。当前阶段交付文件为 [V5.0-STAGE-DELIVERY.md](V5.0-STAGE-DELIVERY.md)。其他窗口的对话不可直接读取；未有交付证据时标注为待同步。
