@@ -258,6 +258,56 @@ test('market can retrieval requires the memory location and reality support befo
   assert.ok(events.includes('save'));
 });
 
+test('cave gate gives tactile feedback before recording the real obstruction', () => {
+  const game = Object.create(Game.prototype);
+  const bars = { id: 'bars', label: '封洞木栅', clue: { id: 'S08_bars' }, dialogue: [] };
+  const events = [];
+  game.model = {
+    scene: { id: 'S08' },
+    state: { clues: [] },
+    observe: id => { events.push(`observe:${id}`); return { ok: true, dialogue: [] }; },
+  };
+  game.modal = null;
+  game.toast = message => events.push(`toast:${message}`);
+  game.save = () => events.push('save');
+  game.dialogue = () => events.push('dialogue');
+
+  game.observe(bars);
+  assert.equal(game.modal.type, 'gate');
+  assert.deepEqual(events, []);
+
+  game.pushGate();
+  assert.equal(game.modal.type, 'gate');
+  assert.deepEqual(events, ['toast:木栅纹丝不动。确认横木仍卡在现实的门框里，再试一次。']);
+
+  game.pushGate();
+  assert.equal(game.modal, null);
+  assert.deepEqual(events.slice(-3), ['observe:bars', 'save', 'dialogue']);
+});
+
+test('S07 fire hotspot asks for a safe distance before recording the clue', () => {
+  const game = Object.create(Game.prototype);
+  const fire = { id: 'fire', label: '焚烧旧画的火', clue: { id: 'S07_fire', title: '火中的画' }, dialogue: [] };
+  const events = [];
+  game.model = {
+    scene: { id: 'S07' },
+    state: { clues: [], settings: { vibration: false } },
+    observe: id => { events.push(`observe:${id}`); return { ok: true, newClue: true, dialogue: [] }; },
+  };
+  game.modal = null;
+  game.toast = message => events.push(`toast:${message}`);
+  game.save = () => events.push('save');
+  game.dialogue = () => events.push('dialogue');
+
+  game.observe(fire);
+  assert.deepEqual(events, []);
+  assert.equal(game.modal.type, 'fire');
+
+  game.observeFire();
+  assert.equal(game.modal, null);
+  assert.deepEqual(events, ['observe:fire', 'toast:线索已记录 · 火中的画', 'save', 'dialogue']);
+});
+
 test('bridge rescue keeps the fixed injury and only advances after both rescue actions', () => {
   const game = Object.create(Game.prototype);
   const observed = [];

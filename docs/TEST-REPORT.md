@@ -77,3 +77,14 @@
 - `npm --prefix server test`：2/2 通过；`git diff --check`：通过。
 - 媒体审核门槛为客户端本地测试结果；当前线上域名不可访问，微信端视频播放没有通过实际设备验收。
 - 微信开发者工具 2.02.2608070：在保留正式 `miniprogramRoot: ./dist/wechat/` 的临时副本 `work/wechat-cli-source-v1` 上执行 CLI `open` 与 `preview`，均退出码 0；报告包大小 3,747,337 bytes。运行时文件复算为 3,747,115 bytes。正式源工程仍为 `touristappid`，这不是手机扫码或真机运行结果，详见 `docs/WECHAT-CLI-VERIFICATION.md`。
+
+## 窗口二核心玩法增量回归（2026-10-17）
+
+- S07 火堆线索现在先通过“隔着火光观察”确认安全距离，再记录既有 `S07_fire`；玩家可退后，不会触碰火堆或改变族长后续处置。
+- S08 封洞木栅现在有独立触屏操作：两次推压反馈现实中的阻力，随后记录既有 `S08_bars` 线索；玩家可取消并回到洞内观察。交互不改变栅栏碰撞、囚禁剧情或存档 schema。
+- 新增 `tests/game-touch.test.js` 行为测试，覆盖 S07 安全确认后记录火堆线索、S08 初次推压不记录线索及重复推压后保存。
+- `npm test`：57/57 通过。
+- `npm run check`：退出码 0；10 个场景、16 个背景引用缺失 0；资源审计另报告 `requiredMemoryLayers: 1`、`missingRequiredMemoryLayers: ["S08.memory"]`，等待匹配洞穴影像。
+- `npm run build`：通过，`dist/wechat` runtimeBytes 为 3,749,653，第三方运行时依赖 0。
+- `node --check ui/game.js tests/game-touch.test.js`：通过。
+- 本轮没有执行微信开发者工具和微信真机人工流程；S08 匹配洞穴影像仍待美术提供及审核，未接入运行时。

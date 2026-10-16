@@ -58,12 +58,22 @@ class Game {
       if(!clues.includes('S02_trace')){this.toast('先检查现实中的格位与拖痕，再取出罐头。');return;}
       this.modal={type:'can',object,support:false,dragStart:null,dragPoint:null};return;
     }
+    if(sceneId==='S07'&&object.id==='fire'&&!clues.includes(object.clue.id)){
+      // A fire is an observation hotspot, but a direct touch should not
+      // silently read as reaching into the flames. Ask for a safe,
+      // distance observation before recording the existing clue.
+      this.modal={type:'fire',object};return;
+    }
     if(sceneId==='S05'&&object.id==='gap'&&!clues.includes(object.clue.id)){
       const r=this.model.observe(object.id,this.mode);if(!r.ok){this.toast(r.message);return;}
       this.modal={type:'rescue',phase:'grip'};this.save();this.toast('脚下落空。先抓住小花，再回应族长的手。');return;
     }
     if(sceneId==='S09'&&object.id==='drawing'&&!clues.includes(object.clue.id)&&!clues.includes('S09_mural')){
       this.toast('先观察岩壁上的旧画，再留下自己的救援画。');return;
+    }
+    if(sceneId==='S08'&&object.id==='bars'&&!clues.includes(object.clue.id)){
+      this.modal={type:'gate',object,pushes:0};
+      return;
     }
     if(object.id==='drawing'&&!this.model.state.clues.includes(object.clue.id)){this.modal={type:'draw',object,strokes:[],current:null};return;}
     if(object.id==='starAlignment'&&!this.model.state.clues.includes(object.clue.id)){this.modal={type:'stars',object,cx:this.W*.43,cy:this.H*.52};return;}
@@ -121,9 +131,18 @@ class Game {
   leverLayout(){return this.portrait?{wind:{x:70,y:300,w:190,h:120},branch:{x:70,y:490,w:190,h:120},fulcrum:{x:340,y:490,w:190,h:120}}:{wind:{x:100,y:185,w:235,h:110},branch:{x:100,y:350,w:235,h:110},fulcrum:{x:430,y:350,w:235,h:110}};}
   inside(point,box){return point&&point[0]>=box.x&&point[0]<=box.x+box.w&&point[1]>=box.y&&point[1]<=box.y+box.h;}
   finishCanInteraction(){const m=this.modal,l=this.canLayout();if(!m||m.type!=='can')return;if(!m.support){this.toast('先检查碎石支点，再伸手取罐头。');return;}if(!this.inside(m.dragPoint,l.drop)){this.toast('罐头被支点卡住了。把它沿货架下沿拖到取物区，再试一次。');return;}const r=this.model.observe('can','reality');if(!r.ok){this.toast(r.message);return;}this.modal=null;this.save();this.dialogue(r.dialogue);}
+  observeFire(){const m=this.modal;if(!m||m.type!=='fire')return;const r=this.model.observe(m.object.id,'reality');if(!r.ok){this.toast(r.message);return;}this.modal=null;if(r.newClue)this.toast('线索已记录 · '+m.object.clue.title,3000);this.save();this.dialogue(r.dialogue||m.object.dialogue);if(this.model.state.settings.vibration)this.p.vibrate();}
   finishLeverInteraction(){const m=this.modal,l=this.leverLayout();if(!m||m.type!=='lever')return;if(!m.support){this.toast('先确认风尘指向的缝隙。');return;}if(!this.inside(m.dragPoint,l.fulcrum)){this.toast('木枝没有落在支点上。沿风向换一个支点，再试一次。');return;}const r=this.model.attempt('lever','reality');if(!r.ok){this.toast(r.message);return;}this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}
   rescueAction(action){const m=this.modal;if(!m||m.type!=='rescue')return;if(m.phase==='grip'){if(action==='struggle'){this.toast('乱动会增加小花手腕的伤势。');return;}const wrist=this.model.observe('wrist','reality');if(!wrist.ok){this.toast(wrist.message);return;}m.phase='chief';this.save();this.toast('小花抓住了你。族长的手已经伸到边缘。');return;}if(action==='letgo'){this.toast('不要松手，先把重心交给族长。');return;}const rescue=this.model.observe('rescue','reality');if(!rescue.ok){this.toast(rescue.message);return;}this.modal=null;this.save();this.dialogue(rescue.dialogue);}
   openObjects(){this.modal={type:'objects'};}
+  pushGate(){
+    const m=this.modal;if(!m||m.type!=='gate')return;
+    m.pushes=(m.pushes||0)+1;
+    if(m.pushes<2){this.toast('木栅纹丝不动。确认横木仍卡在现实的门框里，再试一次。');return;}
+    const r=this.model.observe('bars','reality');
+    if(!r.ok){this.toast(r.message);return;}
+    this.modal=null;this.save();this.dialogue(r.dialogue||m.object.dialogue);
+  }
   drawActor(stage,x,y,label,color,primary=false){
     const c=this.ctx,px=stage.x+x*stage.w,py=stage.y+y*stage.h,walk=Math.sin(this.walkTime*8)*1.5;
     c.save();c.globalAlpha=primary?1:.82;c.strokeStyle=color;c.fillStyle=color;c.lineWidth=2;
@@ -274,6 +293,8 @@ class Game {
       return;
     }
     if(m.type==='can'){this.renderCanInteraction(m);return;}
+    if(m.type==='fire'){this.renderFireInteraction(m);return;}
+    if(m.type==='gate'){this.renderGateInteraction(m);return;}
     if(m.type==='rescue'){this.renderRescueInteraction(m);return;}
     if(m.type==='lever'){this.renderLeverInteraction(m);return;}
     if(m.type==='settings'){
@@ -325,6 +346,12 @@ class Game {
     rect(c,l.drop.x,l.drop.y,l.drop.w,l.drop.h,'#18231f',C.line,4);text(c,'拖到这里取出',l.drop.x+l.drop.w/2,l.drop.y+l.drop.h/2,18,C.muted,'center');
     if(m.dragPoint&&m.dragStart){c.strokeStyle=C.accent;c.lineWidth=3;c.beginPath();c.moveTo(m.dragStart[0],m.dragStart[1]);c.lineTo(m.dragPoint[0],m.dragPoint[1]);c.stroke();}
     text(c,'影像里的食物没有实体；错误位置不会消耗或丢失线索。',54,H-128,18,C.muted);}
+  renderFireInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel('先停在火堆外','火焰会灼伤手指。隔着安全距离观察焚烧中的旧画。');
+    rect(c,70,220,W-140,180,'#35241d',C.line,4);text(c,'焚烧中的旧画',W/2,290,24,C.paper,'center');text(c,'不要伸手碰火',W/2,335,18,C.accent,'center');
+    text(c,'确认后只记录画面，不改变火堆或剧情。',54,H-128,18,C.muted);this.button('隔着火光观察',54,H-98,210,()=>this.observeFire(),true);this.button('退后',W-194,H-98,140,()=>this.closeModal());}
+  renderGateInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel('试着推开木栅','透镜没有影像可切换。木栅是现实中的阻挡，推动只会留下手感反馈。');
+    rect(c,70,220,W-140,180,'#222c27',C.line,4);text(c,'封洞木栅',W/2,290,24,C.paper,'center');text(c,m.pushes?'横木仍卡住了':'手掌抵住横木',W/2,335,18,m.pushes?C.accent:C.muted,'center');
+    text(c,'两次推压确认阻力，随后回到洞内寻找出口线索。',54,H-128,18,C.muted);this.button('推一下',54,H-98,170,()=>this.pushGate());this.button('先停手',W-224,H-98,170,()=>this.closeModal());}
   renderRescueInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel(m.phase==='grip'?'断桥 · 抓住小花':'断桥 · 配合救援','踩空和受伤已经发生。结果固定，错误动作只给反馈，可以重试。');
     if(m.phase==='grip'){wrap(c,'小花抓住你的手腕。收住挣扎，把重心交给她。',54,175,W-108,24,C.paper,38,4);this.button('乱动',54,H-120,170,()=>this.rescueAction('struggle'));this.button('抓住小花',W-250,H-120,196,()=>this.rescueAction('hold'),true);return;}
     wrap(c,'族长伏在完整桥面，伸手提供支点。不要松手，配合两人的拉拽。',54,175,W-108,24,C.paper,38,4);this.button('松手',54,H-120,170,()=>this.rescueAction('letgo'));this.button('配合族长',W-250,H-120,196,()=>this.rescueAction('cooperate'),true);}
