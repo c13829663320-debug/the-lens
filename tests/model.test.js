@@ -178,7 +178,7 @@ test('both S03 viewing choices are recorded without changing the story order', (
 });
 
 test('the four core comparison scenes cannot advance using reality observations alone', () => {
-  const targets = [['S01', 'crowd'], ['S02', 'display'], ['S03', 'painter'], ['S04', 'oldArchive']];
+  const targets = [['S01', 'crowd'], ['S02', 'display'], ['S03', 'painter'], ['S04', 'oldArchive'], ['S06', 'facade']];
   for (const [sceneId, memoryId] of targets) {
     const model = new GameModel();
     while (model.scene.id !== sceneId) solveCurrent(model);

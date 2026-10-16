@@ -20,6 +20,32 @@ test('overlapping touch targets choose the nearest visible action', () => {
   assert.deepEqual(selected, ['左侧']);
 });
 
+test('landscape dialogue stays below the scene and fully covers underlying HUD text', () => {
+  const fills = [];
+  const ctx = {
+    beginPath() {}, rect() {}, fill() { fills.push(this.fillStyle); }, stroke() {}, fillText() {},
+    measureText(value) { return { width: String(value).length * 9 }; },
+  };
+  const game = Object.create(Game.prototype);
+  game.W = 1000;
+  game.H = 600;
+  game.portrait = false;
+  game.ctx = ctx;
+  game.hits = [];
+  game.modal = { type: 'dialogue', lines: [{ speaker: 'AI 广告', text: '循环播放的旧时代旁白' }], index: 0 };
+  game.model = { state: { settings: { subtitles: true } } };
+
+  const panels = [];
+  game.ctx.rect = (x, y, w, h) => panels.push({ x, y, w, h, fill: game.ctx.fillStyle });
+  game.renderModal();
+
+  const card = panels.find(panel => panel.x === 20 && panel.w === 960);
+  assert.ok(card);
+  assert.ok(card.y >= game.stage().y + game.stage().h);
+  assert.equal(fills[1], '#0c1512ff');
+  assert.ok(game.hits.some(hit => hit.label === '继续  →'));
+});
+
 test('stage taps move the player before observing a distant object', () => {
   const game = Object.create(Game.prototype);
   game.player = { x: 0.1, y: 0.8, targetX: 0.1, targetY: 0.8 };
@@ -148,4 +174,60 @@ test('landscape action row exposes the recorded-object browser', () => {
   assert.ok(objects.x + objects.width <= lens.x);
   assert.ok(lens.x + lens.width <= brightness.x);
   assert.ok(brightness.x + brightness.width <= proceed.x);
+});
+
+test('market can retrieval requires the memory location and reality support before the drag', () => {
+  const game = Object.create(Game.prototype);
+  const can = { id: 'can', clue: { id: 'S02_can' } };
+  const events = [];
+  game.model = { scene: { id: 'S02' }, state: { clues: ['S02_display', 'S02_trace'] }, observe: () => ({ ok: true, dialogue: [] }) };
+  game.mode = 'reality'; game.modal = { type: 'can', object: can, support: false, dragStart: null, dragPoint: null };
+  game.portrait = false; game.W = 1000; game.H = 600; game.ox = 0; game.oy = 0; game.scale = 1; game.hits = [];
+  game.hitAt = () => false; game.toast = message => events.push(message); game.save = () => events.push('save'); game.dialogue = () => {};
+
+  game.down(200, 250);
+  assert.equal(game.modal.support, true);
+  game.down(500, 250);
+  assert.equal(game.drag, 'can');
+  game.modal.dragPoint = [500, 430];
+  game.up();
+  assert.equal(game.modal, null);
+  assert.ok(events.includes('save'));
+});
+
+test('bridge rescue keeps the fixed injury and only advances after both rescue actions', () => {
+  const game = Object.create(Game.prototype);
+  const observed = [];
+  game.modal = { type: 'rescue', phase: 'grip' };
+  game.model = { observe: id => { observed.push(id); return { ok: true, dialogue: [] }; } };
+  const notices = [];
+  game.toast = message => notices.push(message); game.save = () => {}; game.dialogue = () => {};
+
+  game.rescueAction('struggle');
+  assert.deepEqual(observed, []);
+  game.rescueAction('hold');
+  assert.deepEqual(observed, ['wrist']);
+  assert.equal(game.modal.phase, 'chief');
+  game.rescueAction('letgo');
+  assert.equal(game.modal.phase, 'chief');
+  game.rescueAction('cooperate');
+  assert.deepEqual(observed, ['wrist', 'rescue']);
+  assert.equal(game.modal, null);
+  assert.ok(notices.some(message => /乱动/.test(message)));
+});
+
+test('断电后撬石 requires the wind check and a correct fulcrum drop', () => {
+  const game = Object.create(Game.prototype);
+  const events = [];
+  game.modal = { type: 'lever', support: false, dragStart: null, dragPoint: null };
+  game.portrait = false; game.W = 1000; game.H = 600;
+  game.model = { attempt: () => { events.push('attempt'); return { ok: true, message: 'opened' }; } };
+  game.audio = { cue: () => {} }; game.save = () => events.push('save'); game.toast = message => events.push(message);
+
+  game.modal.support = true;
+  game.modal.dragStart = [200, 400];
+  game.modal.dragPoint = [500, 400];
+  game.finishLeverInteraction();
+  assert.deepEqual(events, ['attempt', 'save']);
+  assert.equal(game.modal.type, 'success');
 });

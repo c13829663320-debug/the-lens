@@ -47,6 +47,20 @@ class Game {
   dialogue(lines,done){if(!lines||!lines.length){if(done)done();return;}this.modal={type:'dialogue',lines,index:0,done};}
   nextDialogue(){const m=this.modal;if(++m.index>=m.lines.length){this.modal=null;if(m.done)m.done();}}
   observe(object){
+    const sceneId=this.model.scene.id,clues=this.model.state.clues;
+    if(sceneId==='S02'&&object.id==='can'&&!clues.includes(object.clue.id)){
+      if(this.mode!=='reality'){const r=this.model.observe(object.id,this.mode);if(!r.ok)this.toast(r.message);return;}
+      if(!clues.includes('S02_display')){this.toast('先举起透镜确认货架陈列，再收起透镜寻找真实罐头。');return;}
+      if(!clues.includes('S02_trace')){this.toast('先检查现实中的格位与拖痕，再取出罐头。');return;}
+      this.modal={type:'can',object,support:false,dragStart:null,dragPoint:null};return;
+    }
+    if(sceneId==='S05'&&object.id==='gap'&&!clues.includes(object.clue.id)){
+      const r=this.model.observe(object.id,this.mode);if(!r.ok){this.toast(r.message);return;}
+      this.modal={type:'rescue',phase:'grip'};this.toast('脚下落空。先抓住小花，再回应族长的手。');return;
+    }
+    if(sceneId==='S09'&&object.id==='drawing'&&!clues.includes(object.clue.id)&&!clues.includes('S09_mural')){
+      this.toast('先观察岩壁上的旧画，再留下自己的救援画。');return;
+    }
     if(object.id==='drawing'&&!this.model.state.clues.includes(object.clue.id)){this.modal={type:'draw',object,strokes:[],current:null};return;}
     if(object.id==='starAlignment'&&!this.model.state.clues.includes(object.clue.id)){this.modal={type:'stars',object,cx:this.W*.43,cy:this.H*.52};return;}
     const r=this.model.observe(object.id,this.mode);if(!r.ok){this.toast(r.message);return;}
@@ -56,8 +70,16 @@ class Game {
   }
   toggleLens(){if(!this.model.canLens){this.toast(this.model.state.battery<=0?'透镜已断电。镜缘的刻点仍在。':'在旧终端中寻找透镜。');return;}if(!this.model.scene.memory){this.toast('这里没有可复现的影像。');return;}this.mode=this.mode==='reality'?'memory':'reality';this.fade=this.model.state.settings.lowMotion?0:0.28;this.audio.environment(this.mode);this.audio.cue('switch');}
   puzzle(){this.modal={type:'puzzle',feedback:''};}
-  attempt(id){const r=this.model.attempt(id,this.mode);if(r.ok){this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}else{this.modal.feedback=r.message;if(this.model.state.settings.vibration)this.p.vibrate();}}
-  proceed(){const s=this.model.scene;this.dialogue(s.outro||[],()=>{if(!this.model.advance()){this.toast('先完成当前场景。');return;}this.save();if(this.model.state.completed)this.startEpilogue();else this.enter(true);});}
+  attempt(id){
+    if(this.model.scene.id==='S09'&&id==='lever'&&!this.model.state.solved.includes(this.model.scene.puzzle.id)){
+      const required=this.model.scene.puzzle.required;
+      if(!required.every(clue=>this.model.state.clues.includes(clue))){const gate=this.model.attempt(id,this.mode);this.modal.feedback=gate.message;if(this.model.state.settings.vibration)this.p.vibrate();return;}
+      if(this.mode!=='reality'){const gate=this.model.attempt(id,this.mode);this.modal.feedback=gate.message;if(this.model.state.settings.vibration)this.p.vibrate();return;}
+      this.modal={type:'lever',support:false,dragStart:null,dragPoint:null};return;
+    }
+    const r=this.model.attempt(id,this.mode);if(r.ok){this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}else{this.modal.feedback=r.message;if(this.model.state.settings.vibration)this.p.vibrate();}
+  }
+  proceed(){const s=this.model.scene;const choice=this.model.state.choices.S03_art;const outro=s.id==='S03'&&choice==='process'?[{speaker:'动作',text:'阿迟停在画前，看完画师试探、覆盖又重新落笔。'},{speaker:'动作',text:'脚步声穿过画廊。'}]:(s.outro||[]);this.dialogue(outro,()=>{if(!this.model.advance()){this.toast('先完成当前场景。');return;}this.save();if(this.model.state.completed)this.startEpilogue();else this.enter(true);});}
   startEpilogue(){this.screen='epilogue';this.modal=null;this.mode='reality';this.epilogue=0;this.epilogueObserved={};this.settingsPaused=false;this.assets.load('assets/scenes/scene_S09_reality_1280_v1.jpg');this.audio.apply(this.model.state.settings);this.audio.environment('reality');}
   finish(){this.screen='ending';this.modal=null;this.endingTime=this.p.now();this.fade=0;this.audio.environment('ending');}
   frame(time){const dt=this.lastTime?Math.min((time-this.lastTime)/1000,.1):0;this.lastTime=time;
@@ -91,6 +113,12 @@ class Game {
     if(distance>.2){this.movePlayerTo(x,y);this.toast('阿迟走近了 '+object.label+'。',1200);return;}
     this.observe(object);
   }
+  canLayout(){return this.portrait?{support:{x:70,y:340,w:190,h:125},can:{x:340,y:340,w:190,h:125},drop:{x:340,y:520,w:190,h:125}}:{support:{x:100,y:220,w:240,h:110},can:{x:430,y:220,w:220,h:110},drop:{x:430,y:380,w:220,h:110}};}
+  leverLayout(){return this.portrait?{wind:{x:70,y:300,w:190,h:120},branch:{x:70,y:490,w:190,h:120},fulcrum:{x:340,y:490,w:190,h:120}}:{wind:{x:100,y:185,w:235,h:110},branch:{x:100,y:350,w:235,h:110},fulcrum:{x:430,y:350,w:235,h:110}};}
+  inside(point,box){return point&&point[0]>=box.x&&point[0]<=box.x+box.w&&point[1]>=box.y&&point[1]<=box.y+box.h;}
+  finishCanInteraction(){const m=this.modal,l=this.canLayout();if(!m||m.type!=='can')return;if(!m.support){this.toast('先检查碎石支点，再伸手取罐头。');return;}if(!this.inside(m.dragPoint,l.drop)){this.toast('罐头被支点卡住了。把它沿货架下沿拖到取物区，再试一次。');return;}const r=this.model.observe('can','reality');if(!r.ok){this.toast(r.message);return;}this.modal=null;this.save();this.dialogue(r.dialogue);}
+  finishLeverInteraction(){const m=this.modal,l=this.leverLayout();if(!m||m.type!=='lever')return;if(!m.support){this.toast('先确认风尘指向的缝隙。');return;}if(!this.inside(m.dragPoint,l.fulcrum)){this.toast('木枝没有落在支点上。沿风向换一个支点，再试一次。');return;}const r=this.model.attempt('lever','reality');if(!r.ok){this.toast(r.message);return;}this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}
+  rescueAction(action){const m=this.modal;if(!m||m.type!=='rescue')return;if(m.phase==='grip'){if(action==='struggle'){this.toast('乱动会增加小花手腕的伤势。');return;}const wrist=this.model.observe('wrist','reality');if(!wrist.ok){this.toast(wrist.message);return;}m.phase='chief';this.toast('小花抓住了你。族长的手已经伸到边缘。');return;}if(action==='letgo'){this.toast('不要松手，先把重心交给族长。');return;}const rescue=this.model.observe('rescue','reality');if(!rescue.ok){this.toast(rescue.message);return;}this.modal=null;this.save();this.dialogue(rescue.dialogue);}
   openObjects(){this.modal={type:'objects'};}
   drawActor(stage,x,y,label,color,primary=false){
     const c=this.ctx,px=stage.x+x*stage.w,py=stage.y+y*stage.h,walk=Math.sin(this.walkTime*8)*1.5;
@@ -118,6 +146,20 @@ class Game {
     const min=44/this.scale;
     if(this.hitAt(x,y,min))return;
     const m=this.modal;
+    if(m&&m.type==='can'){
+      const l=this.canLayout();
+      if(!m.support&&this.inside([x,y],l.support)){m.support=true;this.toast('支点稳住了。把罐头沿货架下沿拖出来。');return;}
+      if(m.support&&this.inside([x,y],l.can)){m.dragStart=[x,y];m.dragPoint=[x,y];this.drag='can';return;}
+      if(!m.support)this.toast('先点检查碎石支点，再取罐头。');else this.toast('从罐头位置开始拖动。');
+      return;
+    }
+    if(m&&m.type==='lever'){
+      const l=this.leverLayout();
+      if(!m.support&&this.inside([x,y],l.wind)){m.support=true;this.toast('风尘指向这道缝隙。把木枝拖到支点。');return;}
+      if(m.support&&this.inside([x,y],l.branch)){m.dragStart=[x,y];m.dragPoint=[x,y];this.drag='lever';return;}
+      if(!m.support)this.toast('先观察风尘，再选择缝隙。');else this.toast('从木枝位置开始拖动。');
+      return;
+    }
     if(m&&m.type==='draw'&&x>50&&x<this.W-50&&y>155&&y<this.H-155){if(m.current)this.up();if(m.strokes.length>=Strokes.MAX_STROKES){this.toast('已留下80笔。可以保留画痕，或擦去后重画。');return;}m.current=[[x,y]];m.strokes.push(m.current);this.drag='draw';}
     if(m&&m.type==='stars'&&y>150&&y<this.H-150){this.drag='stars';this.dragOffset=[x-m.cx,y-m.cy];}
     if(this.screen==='explore'&&!this.modal){const stage=this.stage();if(x>=stage.x&&x<=stage.x+stage.w&&y>=stage.y&&y<=stage.y+stage.h){this.movePlayerTo(x,y);return;}}
@@ -125,8 +167,14 @@ class Game {
   }
   move(px,py){const x=(px-this.ox)/this.scale,y=(py-this.oy)/this.scale,m=this.modal;if(!this.drag||!m)return;
     if(this.drag==='draw'&&m.current&&x>50&&x<this.W-50&&y>155&&y<this.H-155)Strokes.appendPoint(m.current,[x,y]);
+    if((this.drag==='can'||this.drag==='lever')&&m.dragPoint)m.dragPoint=[x,y];
     if(this.drag==='stars'){m.cx=Math.max(90,Math.min(this.W-90,x-this.dragOffset[0]));m.cy=Math.max(190,Math.min(this.H-170,y-this.dragOffset[1]));}}
-  up(){if(this.modal&&this.modal.current){if(this.modal.type==='draw')Strokes.finishStroke(this.modal.strokes,this.modal.current);this.modal.current=null;}this.drag=null;}
+  up(){
+    if(this.modal&&this.modal.current){if(this.modal.type==='draw')Strokes.finishStroke(this.modal.strokes,this.modal.current);this.modal.current=null;}
+    if(this.drag==='can')this.finishCanInteraction();
+    if(this.drag==='lever')this.finishLeverInteraction();
+    this.drag=null;
+  }
   hit(label,x,y,w,h,fn){this.hits.push({label,x,y,w,h,fn});}
   button(label,x,y,w,fn,primary=false,h=48){const c=this.ctx;rect(c,x,y,w,h,primary?C.paper:'#111a18e8',primary?C.paper:'#69736a',4);text(c,label,x+w/2,y+h/2,20,primary?'#17221d':C.paper,'center');this.hit(label,x,y,w,h,fn);}
   line(x,y,w,color=C.line){const c=this.ctx;c.beginPath();c.moveTo(x,y);c.lineTo(x+w,y);c.strokeStyle=color;c.lineWidth=1;c.stroke();}
@@ -213,10 +261,17 @@ class Game {
     this.hits=[];
     if(m.type==='cg'){this.button('跳过 CG',this.W-160,8,140,()=>{if(this.closeVideo)this.closeVideo();this.modal=null;this.audio.environment(this.mode);},false,44);return;}
     if(m.type==='dialogue'){
-      rect(c,0,0,W,H,'#02060455');const y=H-(this.portrait?300:218);rect(c,20,y,W-40,H-y-20,'#0c1512f7',C.line,4);const l=m.lines[m.index];
-      text(c,l.speaker||'观察',44,y+32,17,C.accent);if(this.model.state.settings.subtitles)wrap(c,l.text,44,y+76,W-88,23,C.paper,34,this.portrait?5:3);else text(c,'叙事字幕已关闭',44,y+76,18,C.muted);
-      text(c,`${m.index+1} / ${m.lines.length}`,44,H-56,16,C.muted);this.button(m.index===m.lines.length-1?'继续  →':'下一页  →',W-192,H-88,146,()=>this.nextDialogue(),true);return;
+      rect(c,0,0,W,H,'#02060455');const y=this.portrait?H-300:Math.ceil(this.stage().y+this.stage().h+4),bottom=H-(this.portrait?20:8);rect(c,20,y,W-40,bottom-y,'#0c1512ff',C.line,4);const l=m.lines[m.index];
+      text(c,l.speaker||'观察',44,y+(this.portrait?32:23),this.portrait?17:15,C.accent);
+      if(this.portrait)wrap(c,this.model.state.settings.subtitles?l.text:'叙事字幕已关闭',44,y+76,W-88,23,this.model.state.settings.subtitles?C.paper:C.muted,34,5);
+      else wrap(c,this.model.state.settings.subtitles?l.text:'叙事字幕已关闭',44,y+46,W-330,18,this.model.state.settings.subtitles?C.paper:C.muted,22,3);
+      if(this.portrait){text(c,`${m.index+1} / ${m.lines.length}`,44,H-56,16,C.muted);this.button(m.index===m.lines.length-1?'继续  →':'下一页  →',W-192,H-88,146,()=>this.nextDialogue(),true);}
+      else{ text(c,`${m.index+1} / ${m.lines.length}`,W-216,H-32,14,C.muted,'right');this.button(m.index===m.lines.length-1?'继续  →':'下一页  →',W-192,H-62,146,()=>this.nextDialogue(),true); }
+      return;
     }
+    if(m.type==='can'){this.renderCanInteraction(m);return;}
+    if(m.type==='rescue'){this.renderRescueInteraction(m);return;}
+    if(m.type==='lever'){this.renderLeverInteraction(m);return;}
     if(m.type==='settings'){
       this.panel('暂停 / 设置','设置与进度只保存在本机。');const st=this.model.state.settings;let y=150;const gap=this.portrait?87:62;
       const toggle=(name,key)=>{text(c,name,54,y+24,20,C.paper);this.button(st[key]?'开启':'关闭',W-200,y,142,()=>{this.model.setSetting(key,!st[key]);this.audio.apply(this.model.state.settings);this.save();});y+=gap;};
@@ -260,6 +315,21 @@ class Game {
     if(m.type==='draw'){this.renderDrawing(m);return;}
     if(m.type==='stars'){this.renderStars(m);return;}
   }
+  renderCanInteraction(m){const c=this.ctx,W=this.W,H=this.H,l=this.canLayout();this.panel('取出真实罐头','收起透镜后，先确认支点，再把真实物品沿货架下沿拖出。');
+    rect(c,l.support.x,l.support.y,l.support.w,l.support.h,m.support?'#4d5948':'#222c27',C.line,4);text(c,m.support?'支点已确认':'点这里检查碎石支点',l.support.x+l.support.w/2,l.support.y+l.support.h/2,18,m.support?C.accent:C.paper,'center');
+    rect(c,l.can.x,l.can.y,l.can.w,l.can.h,'#343a31',C.line,4);text(c,'真实罐头',l.can.x+l.can.w/2,l.can.y+l.can.h/2,18,C.paper,'center');
+    rect(c,l.drop.x,l.drop.y,l.drop.w,l.drop.h,'#18231f',C.line,4);text(c,'拖到这里取出',l.drop.x+l.drop.w/2,l.drop.y+l.drop.h/2,18,C.muted,'center');
+    if(m.dragPoint&&m.dragStart){c.strokeStyle=C.accent;c.lineWidth=3;c.beginPath();c.moveTo(m.dragStart[0],m.dragStart[1]);c.lineTo(m.dragPoint[0],m.dragPoint[1]);c.stroke();}
+    text(c,'影像里的食物没有实体；错误位置不会消耗或丢失线索。',54,H-128,18,C.muted);}
+  renderRescueInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel(m.phase==='grip'?'断桥 · 抓住小花':'断桥 · 配合救援','踩空和受伤已经发生。结果固定，错误动作只给反馈，可以重试。');
+    if(m.phase==='grip'){wrap(c,'小花抓住你的手腕。收住挣扎，把重心交给她。',54,175,W-108,24,C.paper,38,4);this.button('乱动',54,H-120,170,()=>this.rescueAction('struggle'));this.button('抓住小花',W-250,H-120,196,()=>this.rescueAction('hold'),true);return;}
+    wrap(c,'族长伏在完整桥面，伸手提供支点。不要松手，配合两人的拉拽。',54,175,W-108,24,C.paper,38,4);this.button('松手',54,H-120,170,()=>this.rescueAction('letgo'));this.button('配合族长',W-250,H-120,196,()=>this.rescueAction('cooperate'),true);}
+  renderLeverInteraction(m){const c=this.ctx,W=this.W,H=this.H,l=this.leverLayout();this.panel('撬开现实中的路','透镜已经断电。先确认风尘方向，再把木枝拖到能借力的支点。');
+    rect(c,l.wind.x,l.wind.y,l.wind.w,l.wind.h,m.support?'#4d5948':'#222c27',C.line,4);text(c,m.support?'缝隙已确认':'点这里看风尘',l.wind.x+l.wind.w/2,l.wind.y+l.wind.h/2,18,m.support?C.accent:C.paper,'center');
+    rect(c,l.branch.x,l.branch.y,l.branch.w,l.branch.h,'#343a31',C.line,4);text(c,'木枝',l.branch.x+l.branch.w/2,l.branch.y+l.branch.h/2,18,C.paper,'center');
+    rect(c,l.fulcrum.x,l.fulcrum.y,l.fulcrum.w,l.fulcrum.h,'#18231f',C.line,4);text(c,'石块支点',l.fulcrum.x+l.fulcrum.w/2,l.fulcrum.y+l.fulcrum.h/2,18,C.muted,'center');
+    if(m.dragPoint&&m.dragStart){c.strokeStyle=C.accent;c.lineWidth=3;c.beginPath();c.moveTo(m.dragStart[0],m.dragStart[1]);c.lineTo(m.dragPoint[0],m.dragPoint[1]);c.stroke();}
+    text(c,'放错位置不会改变岩石，沿风向重新选择即可。',54,H-128,18,C.muted);}
   renderDrawing(m){const c=this.ctx,W=this.W,H=this.H;this.panel('画下那个瞬间','用手指留下线条：一只手，抓住另一只手。可以擦去、重画。');
     rect(c,50,155,W-100,H-310,'#292b25','#5f6456',2);c.strokeStyle='#bdb8a5';c.lineWidth=4;c.lineCap='round';c.lineJoin='round';for(const stroke of m.strokes){if(stroke.length<2)continue;c.beginPath();c.moveTo(...stroke[0]);for(const p of stroke.slice(1))c.lineTo(...p);c.stroke();}
     const amount=m.strokes.reduce((sum,s)=>sum+s.slice(1).reduce((a,p,i)=>a+Math.hypot(p[0]-s[i][0],p[1]-s[i][1]),0),0);

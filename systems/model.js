@@ -35,6 +35,16 @@ function meaningfulArtwork(strokes) {
   return strokes.reduce((total, stroke) => total + stroke.slice(1).reduce((distance, point, i) => distance + Math.hypot(point[0] - stroke[i][0], point[1] - stroke[i][1]), 0), 0) > 0.15;
 }
 
+function missingClueMessage(scene, puzzle, clues) {
+  const missing = puzzle.required.find((id) => clues.indexOf(id) === -1);
+  const object = scene.objects.find((item) => item.clue.id === missing);
+  if (!object) return '证据还不完整。先完成当前场景的观察与对照。';
+  if (object.id === 'drawing') return '先画下小花抓住手腕的瞬间，再记录这幅新画。';
+  if (object.id === 'starAlignment') return '先拖动镜缘，让五处刻点与真实星光重合。';
+  if (object.mode === 'memory') return '先举起透镜，观察' + object.clue.title + '，再回到现实行动。';
+  return '先收起透镜，靠近并观察' + object.clue.title + '。';
+}
+
 function createState(settings) {
   const preferences = settings === undefined ? clone(DEFAULT_SETTINGS) : clone(settings);
   if (!validSettings(preferences)) throw new TypeError('Invalid settings');
@@ -95,7 +105,7 @@ class GameModel {
     const p = this.scene.puzzle;
     if (activeMode !== 'reality') return { ok: false, message: '影像无法代替行动。先回到现实，再作出选择。' };
     if (this._state.solved.indexOf(p.id) !== -1) return { ok: true, message: p.success };
-    if (!p.required.every((id) => this._state.clues.indexOf(id) !== -1)) return { ok: false, message: '证据还不完整。先完成当前场景的观察与对照。' };
+    if (!p.required.every((id) => this._state.clues.indexOf(id) !== -1)) return { ok: false, message: missingClueMessage(this.scene, p, this._state.clues) };
     const choice = p.options.find((item) => item.id === optionId);
     if (!choice) return { ok: false, message: '请选择当前可用的行动。' };
     if (puzzleAnswers(p).indexOf(optionId) === -1) return { ok: false, message: choice.feedback };
