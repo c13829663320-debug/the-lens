@@ -224,7 +224,7 @@ class Game {
     if(this.mode==='memory'){const realityStrip=Math.min(stage.w*.13,120);c.save();c.beginPath();c.rect(stage.x,stage.y,realityStrip,stage.h);c.clip();cover(c,this.assets.get(s.reality),stage.x,stage.y,stage.w,stage.h);c.restore();c.beginPath();c.moveTo(stage.x+realityStrip,stage.y);c.lineTo(stage.x+realityStrip,stage.y+stage.h);c.strokeStyle=C.accent;c.lineWidth=1;c.stroke();this.line(stage.x,stage.y+stage.h,stage.w,C.accent);}
     const grad=c.createLinearGradient(0,stage.y+stage.h-90,0,stage.y+stage.h);grad.addColorStop(0,'#0c101000');grad.addColorStop(1,C.bg);c.fillStyle=grad;c.fillRect(0,stage.y,stage.w,stage.h);
     this.drawLensOverlay(stage,state);
-    const header=this.portrait?{brand:24,title:62,goal:108}:{brand:20,title:48,goal:70};
+    const header=this.portrait?{brand:24,title:62,goal:108}:{brand:18,title:44,goal:72};
     text(c,'T H E   L E N S',24,header.brand,15,C.accent);text(c,s.subtitle||s.title,24,header.title,25,C.paper,'left','serif');
     const idx=SCENES.findIndex(sc=>sc.id===s.id);text(c,`${String(idx+1).padStart(2,'0')} / ${SCENES.length}`,W-160,22,15,C.muted,'right');this.button('暂停',W-128,8,102,()=>{this.save();this.openSettings();},false,44);
     if(this.portrait)wrap(c,s.goal,24,header.goal,W-48,19,C.muted,26,2);else text(c,s.goal,24,header.goal,17,C.muted);
@@ -258,11 +258,12 @@ class Game {
   renderExploreActions(state,s,by,actionH,gy){
     const c=this.ctx,W=this.W,H=this.H;
     if(!this.portrait){this.button('线索册',24,by,110,()=>{this.bookPage=0;this.modal={type:'notebook'};},false,actionH);this.button('章节',146,by,94,()=>this.modal={type:'map'},false,actionH);this.button('观察条目',248,by,160,()=>this.openObjects(),false,actionH);}
-    const lx=this.portrait?24:270;this.button(this.mode==='memory'?'收起透镜':'举起透镜',lx,by,160,()=>this.toggleLens(),this.mode==='memory',actionH);
+    const lx=this.portrait?24:430;this.button(this.mode==='memory'?'收起透镜':'举起透镜',lx,by,this.portrait?160:150,()=>this.toggleLens(),this.mode==='memory',actionH);
     const power=state.lensAcquired?(state.battery<=0?'断电':state.battery<1?'<1%':`${Math.ceil(state.battery)}%`):'未取得';
     if(this.portrait){const powerY=Math.min(by+63,H-27);text(c,`透镜 · ${power}`,lx+80,powerY,15,C.muted,'center');}
     else text(c,`透镜 · ${power}`,W-24,gy,14,C.muted,'right');
-    this.button(state.brightness===2?'亮度 · 高':'亮度 · 低',lx+176,by,130,()=>{if(this.model.canLens){this.model.setBrightness(state.brightness===1?2:1);this.save();}else this.toast('透镜当前不可启动。');},false,actionH);
+    const brightnessX=this.portrait?lx+176:600;
+    this.button(state.brightness===2?'亮度 · 高':'亮度 · 低',brightnessX,by,130,()=>{if(this.model.canLens){this.model.setBrightness(state.brightness===1?2:1);this.save();}else this.toast('透镜当前不可启动。');},false,actionH);
     const solved=state.solved.includes(s.puzzle.id);this.button(solved?'继续  →':'采取行动  →',W-220,by,196,()=>solved?this.proceed():this.puzzle(),true,actionH);
     if(this.portrait)text(this.ctx,this.savedTime?'进度已保存到本机':'进度将在行动后保存',24,H-38,15,C.muted);
   }

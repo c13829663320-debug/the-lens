@@ -122,7 +122,7 @@ test('exploration pause stops audio and restores the scene state on return', () 
 
 test('landscape action row exposes the recorded-object browser', () => {
   const game = Object.create(Game.prototype);
-  const labels = [];
+  const buttons = [];
   game.W = 1000;
   game.H = 600;
   game.portrait = false;
@@ -130,15 +130,22 @@ test('landscape action row exposes the recorded-object browser', () => {
   game.bookPage = 0;
   game.modal = null;
   game.ctx = { fillText() {} };
-  game.button = (label, x, y, width, fn) => labels.push({ label, fn });
+  game.button = (label, x, y, width, fn) => buttons.push({ label, x, y, width, fn });
   game.model = { canLens: false };
   game.toggleLens = () => {};
   game.save = () => {};
   game.toast = () => {};
   game.renderExploreActions({ lensAcquired: false, battery: 0, brightness: 1, solved: [] }, { puzzle: { id: 'puzzle' } }, 540, 44, 556);
 
-  const objects = labels.find(button => button.label === '观察条目');
+  const objects = buttons.find(button => button.label === '观察条目');
   assert.ok(objects);
   objects.fn();
   assert.deepEqual(game.modal, { type: 'objects' });
+
+  const lens = buttons.find(button => button.label === '举起透镜');
+  const brightness = buttons.find(button => button.label === '亮度 · 低');
+  const proceed = buttons.find(button => button.label === '采取行动  →');
+  assert.ok(objects.x + objects.width <= lens.x);
+  assert.ok(lens.x + lens.width <= brightness.x);
+  assert.ok(brightness.x + brightness.width <= proceed.x);
 });
