@@ -8,6 +8,7 @@
 - **DNS/HTTPS 未完成**：ECS 已部署服务并通过 `--resolve lens.xscxm.asia:80:60.205.220.112` 验证健康、清单和 Range；`lens.xscxm.asia` 的 DNS A 记录、证书、备案和微信合法域名仍待配置。
 - **CG 尚未接入**：Seedance 任务 `task_5ZmtlE4uw1pl4zv8oehX6gzdUlnZ68p9` 已报告完成，草稿已下载到 `server/media/cg_s01_reveal_720p_v1.mp4` 并通过 ffprobe/ffmpeg 基础校验。接触表提示其构图与 canonical S01 不同；本地 manifest 仅登记 draft 预览。尚未完成人工剧情/画面批准、最终转码、hash 登记、ECS 远程部署或微信播放验证，不能把任务完成状态当成游戏已播放。
 - **微信开发者工具/真机尚未完整验收**：已用本机 CLI 在临时副本（合法 AppID `wx2d93fdfdf96aa297`）真实执行导入、预览编译和自动预览，包大小 `3,729,025` bytes；交付工程仍为 `touristappid` 占位值，尚无真实用户 AppID 直接导入结果、微信真机扫码运行或设备录屏。详见 `docs/WECHAT-CLI-VERIFICATION.md`。
+- **GitHub 远程尚未可写**：本地仓库已初始化并提交 `22ef5bc`，远程设置为 `https://github.com/c13829663320-debug/the-lens.git`；GitHub 返回 `Repository not found`，因此本轮不能伪称已推送。待该仓库创建/授权后执行 `git push -u origin main`。
 
 ## 需要用户/部署方提供
 
