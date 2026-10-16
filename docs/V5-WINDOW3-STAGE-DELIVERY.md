@@ -88,6 +88,7 @@
 本轮在共享工作树执行，命令均返回退出码 0：
 
 - `npm test`：47/47 通过。
+- 在玩法窗口继续留下未提交变更后复跑 `npm test`：51/51 通过（新增 S02/S05/S09 玩法测试）；该结果属于共享未提交工作树，不是窗口三改动，也不代表窗口一已最终集成。
 - `npm run check`：`scenes: 10`、`backgroundReferences: 16`、`missing: 0`。
 - `npm run build`：成功，生成 `dist/browser.js` 和 `dist/wechat/`；本轮输出 `runtimeBytes: 3737573`、`dependencyCount: 0`。构建反映了工作树中其他窗口当前未提交的源文件，不能据此宣称其已完成集成。
 - `npm --prefix server test`：2/2 通过，覆盖 Range、HEAD、manifest 过滤、错误码、CORS 条件和路径穿越。
