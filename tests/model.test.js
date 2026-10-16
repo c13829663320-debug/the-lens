@@ -10,7 +10,9 @@ const ARTWORK = [ [[0.2, 0.2], [0.45, 0.4], [0.6, 0.45]], [[0.55, 0.5], [0.7, 0.
 function solveCurrent(model) {
   const scene = model.scene;
   if (scene.id === 'S09') assert.equal(model.setArtwork(ARTWORK), true);
-  scene.objects.filter((item) => scene.puzzle.required.indexOf(item.clue.id) !== -1).forEach((item) => assert.equal(model.observe(item.id, item.mode).ok, true));
+  const required = scene.objects.filter((item) => scene.puzzle.required.indexOf(item.clue.id) !== -1);
+  for (let pass = 0; pass < required.length; pass += 1) required.forEach((item) => { if (!model.state.clues.includes(item.clue.id)) model.observe(item.id, item.mode); });
+  required.forEach((item) => assert.equal(model.state.clues.includes(item.clue.id), true, scene.id + '/' + item.id));
   const answer = scene.puzzle.answers ? scene.puzzle.answers[0] : scene.puzzle.answer;
   assert.equal(model.attempt(answer).ok, true);
   assert.equal(model.advance(), true);
@@ -193,9 +195,28 @@ test('the four core comparison scenes cannot advance using reality observations 
 test('the bridge rescue requires seeing the memory bridge before taking action', () => {
   const model = new GameModel();
   while (model.scene.id !== 'S05') solveCurrent(model);
-  model.scene.objects.filter((item) => item.mode === 'reality').forEach((item) => model.observe(item.id, 'reality'));
+  assert.equal(model.observe('gap', 'reality').ok, false);
   assert.equal(model.attempt('cooperate').ok, false);
   assert.equal(model.observe('bridge', 'memory').ok, true);
+  assert.equal(model.observe('gap', 'reality').ok, true);
+  assert.equal(model.observe('wrist', 'reality').ok, true);
+  assert.equal(model.observe('rescue', 'reality').ok, true);
+  assert.equal(model.attempt('cooperate').ok, true);
+});
+
+test('the bridge accident and rescue clues must be observed in story order', () => {
+  const model = new GameModel();
+  while (model.scene.id !== 'S05') solveCurrent(model);
+  assert.equal(model.observe('gap', 'reality').ok, false);
+  assert.equal(model.observe('wrist', 'reality').ok, false);
+  assert.equal(model.observe('rescue', 'reality').ok, false);
+  assert.equal(model.state.clues.includes('S05_gap'), false);
+  assert.equal(model.observe('bridge', 'reality').ok, false);
+  assert.equal(model.observe('bridge', 'memory').ok, true);
+  assert.equal(model.observe('gap', 'reality').ok, true);
+  assert.equal(model.observe('rescue', 'reality').ok, false);
+  assert.equal(model.observe('wrist', 'reality').ok, true);
+  assert.equal(model.observe('rescue', 'reality').ok, true);
   assert.equal(model.attempt('cooperate').ok, true);
 });
 

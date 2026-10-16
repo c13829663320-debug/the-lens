@@ -95,6 +95,15 @@ class GameModel {
     if (!item) return { ok: false, newClue: false, dialogue: [], message: '这里没有这个可交互物件。' };
     if ((mode !== 'reality' && mode !== 'memory') || (item.mode !== 'both' && mode !== item.mode)) return { ok: false, newClue: false, dialogue: [], message: item.mode === 'memory' ? '切换到透镜影像，再观察这里。' : '回到现实，再检查这件物品。' };
     if (mode === 'memory' && !this.canLens && this._state.clues.indexOf(item.clue.id) === -1) return { ok: false, newClue: false, dialogue: [], message: '透镜已经没有电，仍可回看已记录的影像线索。' };
+    if (this.scene.id === 'S05') {
+      const prerequisites = {
+        gap: ['S05_bridge', '先举起透镜，观察完整的旧连廊。'],
+        wrist: ['S05_gap', '先确认现实中的断口。'],
+        rescue: ['S05_wrist', '先稳住小花受伤的手腕。'],
+      };
+      const gate = prerequisites[item.id];
+      if (gate && this._state.clues.indexOf(gate[0]) === -1) return { ok: false, newClue: false, dialogue: [], message: gate[1] };
+    }
     if (item.id === 'drawing' && this.scene.id === 'S09' && !meaningfulArtwork(this._state.artwork)) return { ok: false, newClue: false, dialogue: [], message: '先亲手留下至少两笔可辨认的画痕，再记录这幅新画。' };
     const isNew = this._state.clues.indexOf(item.clue.id) === -1;
     if (isNew) { this._state.clues.push(item.clue.id); if (item.id === 'terminal' && this.scene.id === 'S01') this._state.lensAcquired = true; this._changed(); }

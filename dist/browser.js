@@ -97,6 +97,10 @@ class Game {
     this.assets.retain([s.reality,s.memory,this.titlePath,'assets/scenes/scene_S01_memory_1280_v1.jpg']);
     await Promise.all([this.assets.load(s.reality),this.assets.load(s.memory)]);
     this.audio.apply(this.model.state.settings);this.audio.environment(s.id==='S08'||s.id==='S09'?'cave':'reality');
+    if(s.id==='S05'){
+      const clues=this.model.state.clues;
+      if(clues.includes('S05_gap')&&!clues.includes('S05_rescue'))this.modal={type:'rescue',phase:clues.includes('S05_wrist')?'chief':'grip'};
+    }
     if(intro&&s.intro&&s.intro.length)this.dialogue(s.intro,()=>this.optionalCG(s.id));
   }
   audioMode(){const id=this.model&&this.model.scene&&this.model.scene.id;return id==='S08'||id==='S09'?'cave':this.mode;}
@@ -116,7 +120,7 @@ class Game {
     }
     if(sceneId==='S05'&&object.id==='gap'&&!clues.includes(object.clue.id)){
       const r=this.model.observe(object.id,this.mode);if(!r.ok){this.toast(r.message);return;}
-      this.modal={type:'rescue',phase:'grip'};this.toast('脚下落空。先抓住小花，再回应族长的手。');return;
+      this.modal={type:'rescue',phase:'grip'};this.save();this.toast('脚下落空。先抓住小花，再回应族长的手。');return;
     }
     if(sceneId==='S09'&&object.id==='drawing'&&!clues.includes(object.clue.id)&&!clues.includes('S09_mural')){
       this.toast('先观察岩壁上的旧画，再留下自己的救援画。');return;
@@ -178,7 +182,7 @@ class Game {
   inside(point,box){return point&&point[0]>=box.x&&point[0]<=box.x+box.w&&point[1]>=box.y&&point[1]<=box.y+box.h;}
   finishCanInteraction(){const m=this.modal,l=this.canLayout();if(!m||m.type!=='can')return;if(!m.support){this.toast('先检查碎石支点，再伸手取罐头。');return;}if(!this.inside(m.dragPoint,l.drop)){this.toast('罐头被支点卡住了。把它沿货架下沿拖到取物区，再试一次。');return;}const r=this.model.observe('can','reality');if(!r.ok){this.toast(r.message);return;}this.modal=null;this.save();this.dialogue(r.dialogue);}
   finishLeverInteraction(){const m=this.modal,l=this.leverLayout();if(!m||m.type!=='lever')return;if(!m.support){this.toast('先确认风尘指向的缝隙。');return;}if(!this.inside(m.dragPoint,l.fulcrum)){this.toast('木枝没有落在支点上。沿风向换一个支点，再试一次。');return;}const r=this.model.attempt('lever','reality');if(!r.ok){this.toast(r.message);return;}this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}
-  rescueAction(action){const m=this.modal;if(!m||m.type!=='rescue')return;if(m.phase==='grip'){if(action==='struggle'){this.toast('乱动会增加小花手腕的伤势。');return;}const wrist=this.model.observe('wrist','reality');if(!wrist.ok){this.toast(wrist.message);return;}m.phase='chief';this.toast('小花抓住了你。族长的手已经伸到边缘。');return;}if(action==='letgo'){this.toast('不要松手，先把重心交给族长。');return;}const rescue=this.model.observe('rescue','reality');if(!rescue.ok){this.toast(rescue.message);return;}this.modal=null;this.save();this.dialogue(rescue.dialogue);}
+  rescueAction(action){const m=this.modal;if(!m||m.type!=='rescue')return;if(m.phase==='grip'){if(action==='struggle'){this.toast('乱动会增加小花手腕的伤势。');return;}const wrist=this.model.observe('wrist','reality');if(!wrist.ok){this.toast(wrist.message);return;}m.phase='chief';this.save();this.toast('小花抓住了你。族长的手已经伸到边缘。');return;}if(action==='letgo'){this.toast('不要松手，先把重心交给族长。');return;}const rescue=this.model.observe('rescue','reality');if(!rescue.ok){this.toast(rescue.message);return;}this.modal=null;this.save();this.dialogue(rescue.dialogue);}
   openObjects(){this.modal={type:'objects'};}
   drawActor(stage,x,y,label,color,primary=false){
     const c=this.ctx,px=stage.x+x*stage.w,py=stage.y+y*stage.h,walk=Math.sin(this.walkTime*8)*1.5;
@@ -502,12 +506,12 @@ const SCENES = [
     option('remember', '镜缘五个浅刻点', '星点和刻点短暂重合。'), option('discard', '破碎地面的纹理', '相对位置与镜缘相应。'), option('delegate', '等待装置替自己画出出口', '影像没有现实出口的答案。')
   ], 'remember', '五点排列与留言收入线索册。'), [action('阿迟抬眼望向连廊另一端。')]),
 
-  scene('S05', '高架连廊', '06 / 踩空', '踩空之后，配合小花和族长完成救援。', img('S05', 'reality'), img('S05', 'memory'), [action('透镜里旧连廊完整伸向前方。阿迟追随桥影迈步，脚下骤然落空。'), action('小花抓住他的手腕，被边缘划伤；族长赶来伸手。')], [
+  scene('S05', '高架连廊', '06 / 旧桥影', '观察完整桥影，再确认现实断口。', img('S05', 'reality'), img('S05', 'memory'), [action('透镜中的旧连廊完整地伸向前方。阿迟停在断口前，目光追随着那条路。')], [
     real('S05', 'gap', '脚下断口', .52, .67, '影像没有承重', '桥面已断。踩空无法倒回，现实边缘承受两人重量。'),
     real('S05', 'wrist', '小花受伤手腕', .27, .59, '抓住他的手', '小花紧抓阿迟，乱动会增加伤势。'),
     real('S05', 'rescue', '族长伸来的手', .72, .52, '救援支点', '族长伏在完整桥面，伸手提供支点。'),
     mem('S05', 'bridge', '完整连廊影像', .63, .38, '没有实体的旧桥', '人流仍在旧桥上行走，影像不因险情停下。')
-  ], puzzle('S05_rescue', '配合救援', '小花手腕受伤。先对照透镜中的旧连廊，再回应正在发生的救援。', ['S05_gap', 'S05_wrist', 'S05_rescue', 'S05_bridge'], [
+  ], puzzle('S05_rescue', '配合救援', '小花手腕受伤。先对照透镜中的旧连廊，再回应正在发生的救援。', ['S05_bridge', 'S05_gap', 'S05_wrist', 'S05_rescue'], [
     option('cooperate', '收住挣扎，抓稳族长的手', '稳住重心，配合两人拉拽。'), option('struggle', '摆动并独自攀回', '摆动加重小花负担。'), option('image', '踩向影像桥面', '影像无法承重。')
   ], 'cooperate', '族长与小花把阿迟拉回桥面。'), [action('族长带着两人返回部落。')]),
 
@@ -641,6 +645,15 @@ class GameModel {
     if (!item) return { ok: false, newClue: false, dialogue: [], message: '这里没有这个可交互物件。' };
     if ((mode !== 'reality' && mode !== 'memory') || (item.mode !== 'both' && mode !== item.mode)) return { ok: false, newClue: false, dialogue: [], message: item.mode === 'memory' ? '切换到透镜影像，再观察这里。' : '回到现实，再检查这件物品。' };
     if (mode === 'memory' && !this.canLens && this._state.clues.indexOf(item.clue.id) === -1) return { ok: false, newClue: false, dialogue: [], message: '透镜已经没有电，仍可回看已记录的影像线索。' };
+    if (this.scene.id === 'S05') {
+      const prerequisites = {
+        gap: ['S05_bridge', '先举起透镜，观察完整的旧连廊。'],
+        wrist: ['S05_gap', '先确认现实中的断口。'],
+        rescue: ['S05_wrist', '先稳住小花受伤的手腕。'],
+      };
+      const gate = prerequisites[item.id];
+      if (gate && this._state.clues.indexOf(gate[0]) === -1) return { ok: false, newClue: false, dialogue: [], message: gate[1] };
+    }
     if (item.id === 'drawing' && this.scene.id === 'S09' && !meaningfulArtwork(this._state.artwork)) return { ok: false, newClue: false, dialogue: [], message: '先亲手留下至少两笔可辨认的画痕，再记录这幅新画。' };
     const isNew = this._state.clues.indexOf(item.clue.id) === -1;
     if (isNew) { this._state.clues.push(item.clue.id); if (item.id === 'terminal' && this.scene.id === 'S01') this._state.lensAcquired = true; this._changed(); }

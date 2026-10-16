@@ -114,7 +114,9 @@ test('actual normalized drawing strokes survive save, restore and completed jour
   let model = new GameModel();
   while (model.scene.id !== 'S09') {
     const scene = model.scene;
-    scene.objects.filter((item) => scene.puzzle.required.includes(item.clue.id)).forEach((item) => assert.equal(model.observe(item.id, item.mode).ok, true));
+    const required = scene.objects.filter((item) => scene.puzzle.required.includes(item.clue.id));
+    for (let pass = 0; pass < required.length; pass += 1) required.forEach((item) => { if (!model.state.clues.includes(item.clue.id)) model.observe(item.id, item.mode); });
+    required.forEach((item) => assert.equal(model.state.clues.includes(item.clue.id), true, scene.id + '/' + item.id));
     assert.equal(model.attempt(scene.puzzle.answer).ok, true);
     assert.equal(model.advance(), true);
   }

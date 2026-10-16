@@ -37,6 +37,10 @@ class Game {
     this.assets.retain([s.reality,s.memory,this.titlePath,'assets/scenes/scene_S01_memory_1280_v1.jpg']);
     await Promise.all([this.assets.load(s.reality),this.assets.load(s.memory)]);
     this.audio.apply(this.model.state.settings);this.audio.environment(s.id==='S08'||s.id==='S09'?'cave':'reality');
+    if(s.id==='S05'){
+      const clues=this.model.state.clues;
+      if(clues.includes('S05_gap')&&!clues.includes('S05_rescue'))this.modal={type:'rescue',phase:clues.includes('S05_wrist')?'chief':'grip'};
+    }
     if(intro&&s.intro&&s.intro.length)this.dialogue(s.intro,()=>this.optionalCG(s.id));
   }
   audioMode(){const id=this.model&&this.model.scene&&this.model.scene.id;return id==='S08'||id==='S09'?'cave':this.mode;}
@@ -56,7 +60,7 @@ class Game {
     }
     if(sceneId==='S05'&&object.id==='gap'&&!clues.includes(object.clue.id)){
       const r=this.model.observe(object.id,this.mode);if(!r.ok){this.toast(r.message);return;}
-      this.modal={type:'rescue',phase:'grip'};this.toast('脚下落空。先抓住小花，再回应族长的手。');return;
+      this.modal={type:'rescue',phase:'grip'};this.save();this.toast('脚下落空。先抓住小花，再回应族长的手。');return;
     }
     if(sceneId==='S09'&&object.id==='drawing'&&!clues.includes(object.clue.id)&&!clues.includes('S09_mural')){
       this.toast('先观察岩壁上的旧画，再留下自己的救援画。');return;
@@ -118,7 +122,7 @@ class Game {
   inside(point,box){return point&&point[0]>=box.x&&point[0]<=box.x+box.w&&point[1]>=box.y&&point[1]<=box.y+box.h;}
   finishCanInteraction(){const m=this.modal,l=this.canLayout();if(!m||m.type!=='can')return;if(!m.support){this.toast('先检查碎石支点，再伸手取罐头。');return;}if(!this.inside(m.dragPoint,l.drop)){this.toast('罐头被支点卡住了。把它沿货架下沿拖到取物区，再试一次。');return;}const r=this.model.observe('can','reality');if(!r.ok){this.toast(r.message);return;}this.modal=null;this.save();this.dialogue(r.dialogue);}
   finishLeverInteraction(){const m=this.modal,l=this.leverLayout();if(!m||m.type!=='lever')return;if(!m.support){this.toast('先确认风尘指向的缝隙。');return;}if(!this.inside(m.dragPoint,l.fulcrum)){this.toast('木枝没有落在支点上。沿风向换一个支点，再试一次。');return;}const r=this.model.attempt('lever','reality');if(!r.ok){this.toast(r.message);return;}this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}
-  rescueAction(action){const m=this.modal;if(!m||m.type!=='rescue')return;if(m.phase==='grip'){if(action==='struggle'){this.toast('乱动会增加小花手腕的伤势。');return;}const wrist=this.model.observe('wrist','reality');if(!wrist.ok){this.toast(wrist.message);return;}m.phase='chief';this.toast('小花抓住了你。族长的手已经伸到边缘。');return;}if(action==='letgo'){this.toast('不要松手，先把重心交给族长。');return;}const rescue=this.model.observe('rescue','reality');if(!rescue.ok){this.toast(rescue.message);return;}this.modal=null;this.save();this.dialogue(rescue.dialogue);}
+  rescueAction(action){const m=this.modal;if(!m||m.type!=='rescue')return;if(m.phase==='grip'){if(action==='struggle'){this.toast('乱动会增加小花手腕的伤势。');return;}const wrist=this.model.observe('wrist','reality');if(!wrist.ok){this.toast(wrist.message);return;}m.phase='chief';this.save();this.toast('小花抓住了你。族长的手已经伸到边缘。');return;}if(action==='letgo'){this.toast('不要松手，先把重心交给族长。');return;}const rescue=this.model.observe('rescue','reality');if(!rescue.ok){this.toast(rescue.message);return;}this.modal=null;this.save();this.dialogue(rescue.dialogue);}
   openObjects(){this.modal={type:'objects'};}
   drawActor(stage,x,y,label,color,primary=false){
     const c=this.ctx,px=stage.x+x*stage.w,py=stage.y+y*stage.h,walk=Math.sin(this.walkTime*8)*1.5;

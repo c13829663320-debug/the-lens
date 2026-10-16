@@ -4,6 +4,44 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { Game } = require('../ui/game');
 const { containFrame } = require('../ui/draw');
+const { GameModel, createState } = require('../systems/model');
+const { SaveStore } = require('../systems/storage');
+
+function createS05Model(onChange) {
+  const model = new GameModel(createState(), onChange);
+  while (model.scene.id !== 'S05') {
+    const scene = model.scene;
+    scene.objects.filter(item => scene.puzzle.required.includes(item.clue.id)).forEach(item => assert.equal(model.observe(item.id, item.mode).ok, true));
+    const answer = scene.puzzle.answers ? scene.puzzle.answers[0] : scene.puzzle.answer;
+    assert.equal(model.attempt(answer).ok, true);
+    assert.equal(model.advance(), true);
+  }
+  return model;
+}
+
+function storageAdapter() {
+  const values = new Map();
+  return { get: key => values.get(key) || null, set: (key, value) => values.set(key, value), remove: key => values.delete(key) };
+}
+
+function createRescueGame(state, adapter) {
+  const game = Object.create(Game.prototype);
+  game.dirty = false;
+  game.hasSave = false;
+  game.lastSave = 0;
+  game.modal = null;
+  game.p = { now: () => 100, vibrate: () => {} };
+  game.store = new SaveStore(adapter);
+  game.model = new GameModel(state, () => { game.dirty = true; });
+  game.mode = 'reality';
+  game.titlePath = 'assets/scenes/scene_S01_reality_1280_v1.jpg';
+  game.assets = { retain: () => {}, load: () => Promise.resolve(null) };
+  game.audio = { apply: () => {}, environment: () => {} };
+  game.resetPlayer = () => {};
+  game.toast = () => {};
+  game.dialogue = () => {};
+  return game;
+}
 
 test('letterboxed scene images expose a frame for aligned hotspots', () => {
   assert.deepEqual(containFrame({ width: 1280, height: 720 }, 0, 0, 1000, 360), { x: 180, y: 0, w: 640, h: 360 });
@@ -239,6 +277,40 @@ test('bridge rescue keeps the fixed injury and only advances after both rescue a
   assert.deepEqual(observed, ['wrist', 'rescue']);
   assert.equal(game.modal, null);
   assert.ok(notices.some(message => /乱动/.test(message)));
+});
+
+test('bridge rescue resumes the saved action after interruption at either step', async () => {
+  const adapter = storageAdapter();
+  const initial = createS05Model().state;
+  const game = createRescueGame(initial, adapter);
+  const bridge = game.model.scene.objects.find(item => item.id === 'bridge');
+  const gap = game.model.scene.objects.find(item => item.id === 'gap');
+
+  game.mode = 'reality';
+  game.observe(gap);
+  assert.equal(game.modal, null);
+  game.mode = 'memory';
+  game.observe(bridge);
+  game.mode = 'reality';
+  game.observe(gap);
+  assert.equal(game.modal.phase, 'grip');
+  assert.ok(adapter.get('the-lens.save.v1'));
+
+  const resumedGrip = createRescueGame(new SaveStore(adapter).load().state, adapter);
+  await resumedGrip.enter(false);
+  assert.deepEqual(resumedGrip.modal, { type: 'rescue', phase: 'grip' });
+
+  game.modal = { type: 'rescue', phase: 'grip' };
+  game.rescueAction('hold');
+  assert.equal(game.modal.phase, 'chief');
+  const resumedChief = createRescueGame(new SaveStore(adapter).load().state, adapter);
+  await resumedChief.enter(false);
+  assert.deepEqual(resumedChief.modal, { type: 'rescue', phase: 'chief' });
+
+  game.rescueAction('cooperate');
+  const resumedAfterRescue = createRescueGame(new SaveStore(adapter).load().state, adapter);
+  await resumedAfterRescue.enter(false);
+  assert.equal(resumedAfterRescue.modal, null);
 });
 
 test('断电后撬石 requires the wind check and a correct fulcrum drop', () => {
