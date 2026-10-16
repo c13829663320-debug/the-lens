@@ -27,8 +27,11 @@ function createPlatform() {
       v.src=url;v.controls=true;v.playsInline=true;v.preload='auto';
       v.muted=options.muted===true;
       v.volume=typeof options.volume==='number'&&Number.isFinite(options.volume)?Math.max(0,Math.min(1,options.volume)):1;
-      v.style.cssText='position:fixed;left:0;top:60px;width:100%;height:calc(100% - 60px);background:#000;z-index:9';
-      close.textContent='跳过';close.style.cssText='position:fixed;right:20px;top:8px;z-index:10;min-height:44px;padding:10px 18px';
+      const requestedInset=typeof options.topInset==='number'&&Number.isFinite(options.topInset)?Math.max(0,options.topInset):60;
+      const viewportHeight=typeof innerHeight==='number'&&Number.isFinite(innerHeight)?innerHeight:0;
+      const topInset=viewportHeight>0?Math.min(Math.max(0,viewportHeight-1),requestedInset):requestedInset;
+      v.style.cssText=`position:fixed;left:0;top:${topInset}px;width:100%;height:calc(100% - ${topInset}px);background:#000;z-index:9`;
+      close.textContent='跳过';close.style.cssText=`position:fixed;right:20px;top:${Math.max(8,topInset-52)}px;z-index:10;min-height:44px;padding:10px 18px`;
       v.onended=()=>settle('end');v.onerror=error=>settle('error',error);
       v.onplaying=()=>{if(finished||ready)return;ready=true;clearTimeout(loadingTimer);if(typeof onReady==='function')onReady();};
       close.onclick=()=>settle('end');document.body.append(v,close);

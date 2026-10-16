@@ -22,12 +22,12 @@ function mockTimers() {
   };
 }
 
-function wechatFixture() {
+function wechatFixture(windowInfo = { windowWidth: 844, windowHeight: 390 }) {
   const timers = mockTimers();
   let latest;
   let options;
   const wx = {
-    createCanvas: () => ({}), getWindowInfo: () => ({ windowWidth: 844, windowHeight: 390 }),
+    createCanvas: () => ({}), getWindowInfo: () => windowInfo,
     onTouchStart() {}, onTouchMove() {}, onTouchEnd() {}, onTouchCancel() {},
     onWindowResize() {}, onHide() {}, onShow() {},
     createVideo(configuration) {
@@ -96,6 +96,18 @@ test('WeChat video reserves scaled skip space, applies sound, and settles once o
   assert.equal(env.timers.pending.size, 0);
 });
 
+test('WeChat size converts a physical-pixel safeArea before layout', () => {
+  const env = wechatFixture({
+    windowWidth: 390, windowHeight: 844, pixelRatio: 2,
+    safeArea: { left: 0, top: 176, right: 780, bottom: 1688 },
+  });
+  const sized = env.platform.size();
+  assert.equal(sized.safe.left, 0);
+  assert.equal(sized.safe.top, 88);
+  assert.equal(sized.safe.right, 390);
+  assert.equal(sized.safe.bottom, 844);
+});
+
 test('WeChat loading timeout destroys once and suppresses a later native error', () => {
   const env = wechatFixture();
   let ended = 0;
@@ -150,6 +162,14 @@ test('browser skip honors sound and removes both controls once despite a queued 
   assert.equal(env.video.removed, true);
   assert.equal(env.button.removed, true);
   assert.equal(env.timers.pending.size, 0);
+});
+
+test('browser CG honors the caller safe inset for the native video layer', () => {
+  const env = browserFixture();
+  env.platform.video('mock.mp4', () => {}, () => {}, null, { topInset: 124 });
+  assert.match(env.video.style.cssText, /top:124px/);
+  assert.match(env.video.style.cssText, /calc\(100% - 124px\)/);
+  assert.match(env.button.style.cssText, /top:72px/);
 });
 
 test('browser loading and overall timeouts both recover without orphaned timers', () => {

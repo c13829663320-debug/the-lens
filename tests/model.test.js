@@ -190,6 +190,15 @@ test('the four core comparison scenes cannot advance using reality observations 
   }
 });
 
+test('the bridge rescue requires seeing the memory bridge before taking action', () => {
+  const model = new GameModel();
+  while (model.scene.id !== 'S05') solveCurrent(model);
+  model.scene.objects.filter((item) => item.mode === 'reality').forEach((item) => model.observe(item.id, 'reality'));
+  assert.equal(model.attempt('cooperate').ok, false);
+  assert.equal(model.observe('bridge', 'memory').ok, true);
+  assert.equal(model.attempt('cooperate').ok, true);
+});
+
 test('pre-cave energy continuously decreases, high brightness consumes faster, cave energy may reach zero', () => {
   const base = new GameModel();
   solveCurrent(base);

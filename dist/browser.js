@@ -38,8 +38,11 @@ function createPlatform() {
       v.src=url;v.controls=true;v.playsInline=true;v.preload='auto';
       v.muted=options.muted===true;
       v.volume=typeof options.volume==='number'&&Number.isFinite(options.volume)?Math.max(0,Math.min(1,options.volume)):1;
-      v.style.cssText='position:fixed;left:0;top:60px;width:100%;height:calc(100% - 60px);background:#000;z-index:9';
-      close.textContent='跳过';close.style.cssText='position:fixed;right:20px;top:8px;z-index:10;min-height:44px;padding:10px 18px';
+      const requestedInset=typeof options.topInset==='number'&&Number.isFinite(options.topInset)?Math.max(0,options.topInset):60;
+      const viewportHeight=typeof innerHeight==='number'&&Number.isFinite(innerHeight)?innerHeight:0;
+      const topInset=viewportHeight>0?Math.min(Math.max(0,viewportHeight-1),requestedInset):requestedInset;
+      v.style.cssText=`position:fixed;left:0;top:${topInset}px;width:100%;height:calc(100% - ${topInset}px);background:#000;z-index:9`;
+      close.textContent='跳过';close.style.cssText=`position:fixed;right:20px;top:${Math.max(8,topInset-52)}px;z-index:10;min-height:44px;padding:10px 18px`;
       v.onended=()=>settle('end');v.onerror=error=>settle('error',error);
       v.onplaying=()=>{if(finished||ready)return;ready=true;clearTimeout(loadingTimer);if(typeof onReady==='function')onReady();};
       close.onclick=()=>settle('end');document.body.append(v,close);
@@ -61,7 +64,7 @@ const {SaveStore}=__require("systems/storage.js");
 const {Assets}=__require("systems/assets.js");
 const {AudioSystem}=__require("systems/audio.js");
 const MEDIA=__require("data/media.js");
-const {COLORS:C,rect,text,wrap,cover,circle}=__require("ui/draw.js");
+const {COLORS:C,rect,text,wrap,cover,contain,containFrame,circle}=__require("ui/draw.js");
 const Strokes=__require("ui/strokes.js");
 
 class Game {
@@ -72,6 +75,7 @@ class Game {
     this.audio=new AudioSystem(platform,m=>this.toast(m));this.screen='title';this.modal=null;this.mode='reality';
     this.hits=[];this.notices=[];this.loadedWarning=loaded.warning;this.lastTime=0;this.lastSave=0;this.savedTime=null;
     this.hidden=false;this.dirty=false;this.fade=0;this.drag=null;this.drawings=[];this.bookPage=0;this.epilogue=0;
+    this.player={x:.16,y:.76,targetX:.16,targetY:.76,sceneId:null};this.walkTime=0;this.lensTime=0;
     this.titlePath='assets/scenes/scene_S01_reality_1280_v1.jpg';this.assets.load(this.titlePath);
     this.assets.load('assets/scenes/scene_S01_memory_1280_v1.jpg');
     this.remoteClips={};this.mediaReady=this.loadMedia();
@@ -89,10 +93,10 @@ class Game {
   resume(){this.screen='explore';this.mode='reality';if(this.model.state.completed){this.startEpilogue();return;}this.enter(false);}
   async loadMedia(){if(!MEDIA.baseUrl)return;try{const base=MEDIA.baseUrl.replace(/\/$/,'');const manifest=await this.p.fetchJson(base+MEDIA.manifestPath);if(manifest.version!==1||!Array.isArray(manifest.assets))throw Error('清单格式异常');for(const a of manifest.assets){if(a.type==='video/mp4'&&typeof a.id==='string'&&typeof a.url==='string'&&a.url.startsWith('/media/'))this.remoteClips[a.id]={url:base+a.url};}}catch{this.toast('CG服务暂不可用，将使用包内场景。');}}
   async enter(intro=true){
-    this.mode='reality';this.fade=this.model.state.settings.lowMotion?0:0.8;this.modal=null;this.sceneImage=null;const s=this.model.scene;
+    this.mode='reality';this.fade=this.model.state.settings.lowMotion?0:0.8;this.modal=null;this.sceneImage=null;const s=this.model.scene;this.resetPlayer(s.id);
     this.assets.retain([s.reality,s.memory,this.titlePath,'assets/scenes/scene_S01_memory_1280_v1.jpg']);
     await Promise.all([this.assets.load(s.reality),this.assets.load(s.memory)]);
-    this.audio.apply(this.model.state.settings);this.audio.environment('reality');
+    this.audio.apply(this.model.state.settings);this.audio.environment(s.id==='S08'||s.id==='S09'?'cave':'reality');
     if(intro&&s.intro&&s.intro.length)this.dialogue(s.intro,()=>this.optionalCG(s.id));
   }
   optionalCG(sceneId){const id=(MEDIA.sceneClips||{})[sceneId],clip=MEDIA.clips[sceneId]||this.remoteClips[id];if(!clip||!clip.url)return;this.modal={type:'cg'};this.audio.pause();const settings=this.model.state.settings;this.closeVideo=this.p.video(clip.url,()=>{this.modal=null;this.audio.environment(this.mode);},()=>{this.modal=null;this.toast('CG加载失败，已恢复场景。');this.audio.environment(this.mode);},()=>{}, {muted:!settings.audio,volume:settings.volume,topInset:this.oy+60*this.scale});}
@@ -111,17 +115,61 @@ class Game {
   attempt(id){const r=this.model.attempt(id,this.mode);if(r.ok){this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}else{this.modal.feedback=r.message;if(this.model.state.settings.vibration)this.p.vibrate();}}
   proceed(){const s=this.model.scene;this.dialogue(s.outro||[],()=>{if(!this.model.advance()){this.toast('先完成当前场景。');return;}this.save();if(this.model.state.completed)this.startEpilogue();else this.enter(true);});}
   startEpilogue(){this.screen='epilogue';this.modal=null;this.mode='reality';this.epilogue=0;this.assets.load('assets/scenes/scene_S09_reality_1280_v1.jpg');this.audio.environment('reality');}
-  finish(){this.screen='ending';this.modal=null;this.endingTime=this.p.now();this.fade=0;this.audio.environment('reality');}
+  finish(){this.screen='ending';this.modal=null;this.endingTime=this.p.now();this.fade=0;this.audio.environment('ending');}
   frame(time){const dt=this.lastTime?Math.min((time-this.lastTime)/1000,.1):0;this.lastTime=time;
-    if(!this.hidden&&this.screen==='explore'&&!this.modal){this.model.tick(dt,this.mode);if(this.model.state.battery<=0&&this.mode==='memory'){this.mode='reality';this.toast('透镜的光熄灭了。');this.audio.environment('reality');}}
+    this.lensTime+=dt;
+    if(!this.hidden&&this.screen==='explore'&&!this.modal)this.updatePlayer(dt);
+    if(!this.hidden&&this.screen==='explore'&&!this.modal){this.model.tick(dt,this.mode);if(this.model.state.battery<=0&&this.mode==='memory'){this.mode='reality';this.toast('透镜的光熄灭了。');this.audio.environment(this.model.scene.id==='S08'||this.model.scene.id==='S09'?'cave':'reality');}}
     if(this.dirty&&this.p.now()-this.lastSave>3000)this.save();
     this.fade=Math.max(0,this.fade-dt*1.5);if(!this.model.state.settings.lowMotion||!this.lastRender||time-this.lastRender>=32){this.render();this.lastRender=time;}this.p.requestFrame(t=>this.frame(t));}
+  resetPlayer(sceneId){
+    const starts={S10:[.18,.74],S01:[.18,.76],S02:[.16,.78],S06:[.22,.76],S03:[.2,.76],S04:[.2,.76],S05:[.18,.74],S07:[.18,.76],S08:[.18,.76],S09:[.16,.76]};
+    const p=starts[sceneId]||starts.S01;this.player={x:p[0],y:p[1],targetX:p[0],targetY:p[1],sceneId};this.walkTime=0;
+  }
+  updatePlayer(dt){
+    if(!this.player||this.player.sceneId!==this.model.scene.id)return;
+    const dx=this.player.targetX-this.player.x,dy=this.player.targetY-this.player.y,d=Math.hypot(dx,dy);
+    if(d<.002){this.player.x=this.player.targetX;this.player.y=this.player.targetY;return;}
+    const step=Math.min(d,dt*.7);this.player.x+=dx/d*step;this.player.y+=dy/d*step;this.walkTime+=dt;
+  }
+  movePlayerTo(x,y){
+    const stage=this.stage();this.player.targetX=Math.max(.08,Math.min(.92,(x-stage.x)/stage.w));this.player.targetY=Math.max(.16,Math.min(.9,(y-stage.y)/stage.h));
+  }
+  interactAt(object,x,y){
+    const stage=this.stage(),tx=Math.max(0,Math.min(1,(x-stage.x)/stage.w)),ty=Math.max(0,Math.min(1,(y-stage.y)/stage.h));
+    const distance=Math.hypot(this.player.x-tx,this.player.y-ty);
+    if(distance>.2){this.movePlayerTo(x,y);this.toast('阿迟走近了 '+object.label+'。',1200);return;}
+    this.observe(object);
+  }
+  drawActor(stage,x,y,label,color,primary=false){
+    const c=this.ctx,px=stage.x+x*stage.w,py=stage.y+y*stage.h,walk=Math.sin(this.walkTime*8)*1.5;
+    c.save();c.globalAlpha=primary?1:.82;c.strokeStyle=color;c.fillStyle=color;c.lineWidth=2;
+    c.beginPath();c.arc(px,py-15,6,0,Math.PI*2);c.fill();c.beginPath();c.moveTo(px,py-8);c.lineTo(px,py+10);c.moveTo(px,py-2);c.lineTo(px-7,py+5);c.moveTo(px,py-2);c.lineTo(px+7,py+5);c.moveTo(px,py+10);c.lineTo(px-6,py+20+walk);c.moveTo(px,py+10);c.lineTo(px+6,py+20-walk);c.stroke();
+    text(c,label,px,py+34,13,color,'center');c.restore();
+  }
+  drawActors(stage){
+    this.drawActor(stage,this.player.x,this.player.y,'阿迟',C.accent,true);
+    const id=this.model.scene.id;
+    if(id==='S02'||id==='S06')this.drawActor(stage,.76,.65,'小花','#d2c5a1');
+    if(id==='S05')this.drawActor(stage,.27,.59,'小花','#d2c5a1');
+    if(id==='S05'||id==='S07')this.drawActor(stage,.72,.52,'族长','#a9b3aa');
+  }
+  drawLensOverlay(stage,state){
+    if(this.mode!=='memory')return;
+    const c=this.ctx,W=this.W,H=this.H,low=state.battery<18,alpha=low?.16:.08;
+    c.save();c.strokeStyle=low?'#d27b62':'#cbb98c';c.lineWidth=2;c.strokeRect(stage.x+5,stage.y+5,stage.w-10,stage.h-10);
+    const g=c.createRadialGradient(stage.x+stage.w/2,stage.y+stage.h/2,Math.min(stage.w,stage.h)*.18,stage.x+stage.w/2,stage.y+stage.h/2,Math.max(stage.w,stage.h)*.68);g.addColorStop(0,'rgba(203,185,140,0)');g.addColorStop(1,`rgba(203,185,140,${alpha})`);c.fillStyle=g;c.fillRect(stage.x,stage.y,stage.w,stage.h);
+    const jitter=low?Math.sin(this.lensTime*18)*2:0;c.globalAlpha=.8;c.strokeStyle=low?'#d27b62':'#cbb98c';c.beginPath();c.moveTo(stage.x+18+jitter,stage.y+18);c.lineTo(stage.x+52+jitter,stage.y+18);c.moveTo(stage.x+18,stage.y+18);c.lineTo(stage.x+18,stage.y+42);c.moveTo(stage.x+stage.w-18-jitter,stage.y+stage.h-18);c.lineTo(stage.x+stage.w-52-jitter,stage.y+stage.h-18);c.moveTo(stage.x+stage.w-18,stage.y+stage.h-18);c.lineTo(stage.x+stage.w-18,stage.y+stage.h-42);c.stroke();
+    text(c,low?'影像失真 · 低电':'影像层 · 非实体',stage.x+stage.w-20,stage.y+24,13,low?'#d27b62':'#cbb98c','right');c.restore();
+  }
+  hitAt(x,y,min){let selected=null,best=Infinity;for(let i=0;i<this.hits.length;i++){const h=this.hits[i],ex=Math.max(0,(min-h.w)/2),ey=Math.max(0,(min-h.h)/2);if(x<h.x-ex||x>h.x+h.w+ex||y<h.y-ey||y>h.y+h.h+ey)continue;const distance=Math.hypot(x-(h.x+h.w/2),y-(h.y+h.h/2));if(distance<best||(distance===best&&selected&&i>selected.index)){selected={hit:h,index:i};best=distance;}}if(selected){selected.hit.fn();return true;}return false;}
   down(px,py){const x=(px-this.ox)/this.scale,y=(py-this.oy)/this.scale;
     const min=44/this.scale;
-    for(let i=this.hits.length-1;i>=0;i--){const h=this.hits[i],ex=Math.max(0,(min-h.w)/2),ey=Math.max(0,(min-h.h)/2);if(x>=h.x-ex&&x<=h.x+h.w+ex&&y>=h.y-ey&&y<=h.y+h.h+ey){h.fn();return;}}
+    if(this.hitAt(x,y,min))return;
     const m=this.modal;
     if(m&&m.type==='draw'&&x>50&&x<this.W-50&&y>155&&y<this.H-155){if(m.current)this.up();if(m.strokes.length>=Strokes.MAX_STROKES){this.toast('已留下80笔。可以保留画痕，或擦去后重画。');return;}m.current=[[x,y]];m.strokes.push(m.current);this.drag='draw';}
     if(m&&m.type==='stars'&&y>150&&y<this.H-150){this.drag='stars';this.dragOffset=[x-m.cx,y-m.cy];}
+    if(this.screen==='explore'&&!this.modal){const stage=this.stage();if(x>=stage.x&&x<=stage.x+stage.w&&y>=stage.y&&y<=stage.y+stage.h){this.movePlayerTo(x,y);return;}}
     if(this.screen==='ending'&&this.p.now()-this.endingTime>4500){this.screen='title';this.audio.pause();}
   }
   move(px,py){const x=(px-this.ox)/this.scale,y=(py-this.oy)/this.scale,m=this.modal;if(!this.drag||!m)return;
@@ -154,13 +202,17 @@ class Game {
   // on short landscape viewports and in the WeChat simulator. The compact
   // landscape header leaves more of the artwork visible while keeping a fixed
   // band for controls below it.
-  stage(){return this.portrait?{x:0,y:142,w:this.W,h:420}:{x:0,y:76,w:this.W,h:360};}
+  stage(){return this.portrait?{x:0,y:142,w:this.W,h:420}:{x:128,y:76,w:744,h:420};}
   renderExplore(){const c=this.ctx,s=this.model.scene,W=this.W,H=this.H,stage=this.stage(),state=this.model.state;
     rect(c,0,0,W,H,C.bg);const active=this.sceneImage||(this.mode==='memory'&&s.memory?s.memory:s.reality);
-    cover(c,this.assets.get(active),stage.x,stage.y,stage.w,stage.h);
+    // Keep the source artwork's full 16:9 composition visible inside the
+    // reserved scene band; cover() used to crop important upper/lower detail.
+    const activeImage=this.assets.get(active),imageFrame=containFrame(activeImage,stage.x,stage.y,stage.w,stage.h);
+    contain(c,activeImage,stage.x,stage.y,stage.w,stage.h,C.bg);
     // Reality remains visible in a thin comparison strip. Source images aren't perfectly registered.
-    if(this.mode==='memory'){const realityStrip=Math.min(stage.w*.13,120);c.save();c.beginPath();c.rect(0,stage.y,realityStrip,stage.h);c.clip();cover(c,this.assets.get(s.reality),stage.x,stage.y,stage.w,stage.h);c.restore();c.beginPath();c.moveTo(realityStrip,stage.y);c.lineTo(realityStrip,stage.y+stage.h);c.strokeStyle=C.accent;c.lineWidth=1;c.stroke();this.line(0,stage.y+stage.h,stage.w,C.accent);}
+    if(this.mode==='memory'){const realityStrip=Math.min(stage.w*.13,120);c.save();c.beginPath();c.rect(stage.x,stage.y,realityStrip,stage.h);c.clip();cover(c,this.assets.get(s.reality),stage.x,stage.y,stage.w,stage.h);c.restore();c.beginPath();c.moveTo(stage.x+realityStrip,stage.y);c.lineTo(stage.x+realityStrip,stage.y+stage.h);c.strokeStyle=C.accent;c.lineWidth=1;c.stroke();this.line(stage.x,stage.y+stage.h,stage.w,C.accent);}
     const grad=c.createLinearGradient(0,stage.y+stage.h-90,0,stage.y+stage.h);grad.addColorStop(0,'#0c101000');grad.addColorStop(1,C.bg);c.fillStyle=grad;c.fillRect(0,stage.y,stage.w,stage.h);
+    this.drawLensOverlay(stage,state);
     const header=this.portrait?{brand:24,title:62,goal:108}:{brand:20,title:48,goal:70};
     text(c,'T H E   L E N S',24,header.brand,15,C.accent);text(c,s.subtitle||s.title,24,header.title,25,C.paper,'left','serif');
     const idx=SCENES.findIndex(sc=>sc.id===s.id);text(c,`${String(idx+1).padStart(2,'0')} / ${SCENES.length}`,W-160,22,15,C.muted,'right');this.button('暂停',W-128,8,102,()=>{this.save();this.modal={type:'settings'};},false,44);
@@ -171,11 +223,13 @@ class Game {
     if(this.assets.error(active)){rect(c,40,stage.y+60,W-80,110,'#0a1210e8',C.line);text(c,'场景图片加载失败，观察条目仍可使用。',W/2,stage.y+94,20,C.paper,'center');this.button('重试加载',W/2-80,stage.y+115,160,()=>this.assets.load(active,true));}
     const objects=s.objects.filter(o=>o.mode==='both'||o.mode===this.mode);
     for(const [i,o] of objects.entries()){
-      if(o.id==='starAlignment'||o.id==='drawing')continue;
-      let x=o.x*stage.w,y=stage.y+o.y*stage.h;x=Math.max(94,Math.min(W-95,x));y=Math.max(stage.y+65,Math.min(stage.y+stage.h-54,y));
-      const seen=state.clues.includes(o.clue.id);circle(c,x,y,16,seen?C.accent:C.paper,'#0c1712cc');text(c,seen?'✓':String(i+1),x,y,15,C.paper,'center');
-      const tw=Math.min(210,Math.max(115,o.label.length*17));rect(c,x-tw/2,y+22,tw,34,'#0c1712e8',null,3);text(c,o.label,x,y+39,16,C.paper,'center');this.hit(o.label,x-tw/2,y-23,tw,84,()=>this.observe(o));
+      let x=imageFrame.x+o.x*imageFrame.w,y=imageFrame.y+o.y*imageFrame.h;x=Math.max(stage.x+32,Math.min(stage.x+stage.w-32,x));y=Math.max(stage.y+65,Math.min(stage.y+stage.h-54,y));
+      const seen=state.clues.includes(o.clue.id),distance=Math.hypot(this.player.x-o.x,this.player.y-o.y),near=distance<.2;
+      circle(c,x,y,seen?16:near?15:11,seen?C.accent:near?C.paper:'#9ba49a88','#0c1712cc');text(c,seen?'✓':near?String(i+1):'·',x,y,15,C.paper,'center');
+      const tw=Math.min(210,Math.max(115,o.label.length*17));rect(c,x-tw/2,y+22,tw,34,'#0c1712e8',null,3);text(c,o.label,x,y+39,16,C.paper,'center');
+      this.hit(o.label,x-28,y-28,56,56,()=>this.interactAt(o,x,y));
     }
+    this.drawActors(stage);
     if(!objects.length)text(c,'这一层影像没有新的观察点。',W/2,stage.y+stage.h*.65,19,C.paper,'center');
     const hudTop=stage.y+stage.h;rect(c,0,hudTop,W,H-hudTop,C.bg);this.line(0,hudTop,W,C.line);
     const gy=this.portrait?Math.max(596,hudTop+28):hudTop+28;const required=s.puzzle.required;const count=required.filter(id=>state.clues.includes(id)).length;
@@ -227,8 +281,9 @@ class Game {
       SCENES.forEach((s,i)=>{const x=54+(i%cols)*(W-108)/cols,y=152+Math.floor(i/cols)*rowH;const done=this.model.state.solved.includes(s.puzzle.id);text(c,`${done?'✓':i===curr?'◉':'○'}  ${String(i+1).padStart(2,'0')}  ${s.title}`,x,y+17,20,i<=curr?C.paper:C.muted);text(c,done?'已完成':i===curr?'当前场景':'尚未抵达',x+34,y+44,14,C.muted);});return;
     }
     if(m.type==='objects'){
-      this.panel('观察条目','选择物件。影像中的线索需要举起透镜。');const obs=this.model.scene.objects;const gap=this.portrait?110:67;
-      obs.forEach((o,i)=>{const y=147+i*gap,seen=this.model.state.clues.includes(o.clue.id),allowed=o.mode==='both'||o.mode===this.mode;this.button(`${seen?'✓  ':''}${o.label}`,54,y,W-108,()=>{if(!allowed){this.toast(o.mode==='memory'?'先返回场景举起透镜。':'先收起透镜，观察现实。');return;}this.modal=null;this.observe(o);},false,50);});return;
+      this.panel('观察条目','这里只回看已经记录的线索；新的发现需要回到场景中靠近物件。');const obs=this.model.scene.objects.filter(o=>this.model.state.clues.includes(o.clue.id));const gap=this.portrait?110:67;
+      if(!obs.length){text(c,'还没有记录。回到场景，走近可见的标记。',54,170,20,C.muted);return;}
+      obs.forEach((o,i)=>{const y=147+i*gap,allowed=o.mode==='both'||o.mode===this.mode;this.button(`✓  ${o.label}`,54,y,W-108,()=>{if(!allowed){this.toast(o.mode==='memory'?'先返回场景举起透镜。':'先收起透镜，观察现实。');return;}this.modal=null;this.observe(o);},false,50);});return;
     }
     if(m.type==='notebook'){
       const clues=this.model.state.clues.map(id=>CLUES[id]).filter(Boolean);const per=this.portrait?5:3,pages=Math.max(1,Math.ceil(clues.length/per));this.bookPage=Math.min(this.bookPage,pages-1);this.panel('线索册',`已记录 ${clues.length} 条 · ${this.bookPage+1} / ${pages}`);
@@ -357,7 +412,7 @@ const SCENES = [
     real('S05', 'wrist', '小花受伤手腕', .27, .59, '抓住他的手', '小花紧抓阿迟，乱动会增加伤势。'),
     real('S05', 'rescue', '族长伸来的手', .72, .52, '救援支点', '族长伏在完整桥面，伸手提供支点。'),
     mem('S05', 'bridge', '完整连廊影像', .63, .38, '没有实体的旧桥', '人流仍在旧桥上行走，影像不因险情停下。')
-  ], puzzle('S05_rescue', '配合救援', '小花手腕受伤。怎样回应正在发生的救援？', ['S05_gap', 'S05_wrist', 'S05_rescue'], [
+  ], puzzle('S05_rescue', '配合救援', '小花手腕受伤。先对照透镜中的旧连廊，再回应正在发生的救援。', ['S05_gap', 'S05_wrist', 'S05_rescue', 'S05_bridge'], [
     option('cooperate', '收住挣扎，抓稳族长的手', '稳住重心，配合两人拉拽。'), option('struggle', '摆动并独自攀回', '摆动加重小花负担。'), option('image', '踩向影像桥面', '影像无法承重。')
   ], 'cooperate', '族长与小花把阿迟拉回桥面。'), [action('族长带着两人返回部落。')]),
 
@@ -619,11 +674,11 @@ module.exports={Assets};
 },
 "systems/audio.js":function(module,exports,__require){
 class AudioSystem {
-  constructor(platform,onError){this.p=platform;this.error=onError;this.settings={audio:true,volume:.35};this.amb=null;this.fx=null;this.mode=null;this.failed=new Set();}
+  constructor(platform,onError){this.p=platform;this.error=onError;this.settings={audio:true,volume:.35};this.amb=null;this.fx=null;this.mode=null;this.modeGain=1;this.failed=new Set();this.states={reality:1,memory:.58,cave:.72,ending:1};}
   setup(a,path){a.src=path;if(a.onError)a.onError(()=>{if(!this.failed.has(path)){this.failed.add(path);this.error('声音加载失败，可继续游玩。');}});return a;}
-  apply(settings){this.settings=settings;if(this.amb){this.amb.volume=settings.audio?settings.volume:0;if(!settings.audio)this.amb.pause();else this.amb.play();}}
-  environment(mode){if(this.mode===mode){this.apply(this.settings);return;}this.mode=mode;if(this.amb)this.amb.stop();this.amb=this.setup(this.p.audio(),'assets/audio/ambient_wind_8s_v1.wav');this.amb.loop=true;this.apply(this.settings);}
-  cue(type){if(!this.settings.audio)return;if(this.fx)this.fx.stop();const path=type==='success'?'assets/audio/puzzle_success_v1.wav':'assets/audio/lens_switch_v1.wav';this.fx=this.setup(this.p.audio(),path);this.fx.volume=this.settings.volume;this.fx.play();}
+  apply(settings){this.settings=settings;if(this.amb){this.amb.volume=settings.audio?settings.volume*this.modeGain:0;if(!settings.audio)this.amb.pause();else this.amb.play();}}
+  environment(mode){const next=this.states[mode]===undefined?'reality':mode;if(this.mode===next){this.apply(this.settings);return;}this.mode=next;this.modeGain=this.states[next];if(this.amb)this.amb.stop();this.amb=this.setup(this.p.audio(),'assets/audio/ambient_wind_8s_v1.wav');this.amb.loop=true;this.apply(this.settings);}
+  cue(type){if(!this.settings.audio)return;if(this.fx)this.fx.stop();const path=type==='success'?'assets/audio/puzzle_success_v1.wav':'assets/audio/lens_switch_v1.wav';this.fx=this.setup(this.p.audio(),path);this.fx.volume=this.settings.volume*(type==='accident'?.8:1);this.fx.play();}
   pause(){if(this.amb)this.amb.pause();if(this.fx)this.fx.stop();}
 }
 module.exports={AudioSystem};
@@ -641,8 +696,10 @@ function rect(ctx,x,y,w,h,fill,stroke,r=0){ctx.beginPath();if(r&&ctx.roundRect)c
 function text(ctx,value,x,y,size=16,color=COLORS.paper,align='left',font='sans-serif'){ctx.font=`${size}px ${font}`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillStyle=color;ctx.fillText(String(value),x,y);}
 function wrap(ctx,value,x,y,maxWidth,size=17,color=COLORS.paper,line=27,maxLines=20){ctx.font=`${size}px sans-serif`;let out='',row=0;for(const ch of String(value)){if(ch==='\n'||ctx.measureText(out+ch).width>maxWidth){text(ctx,out,x,y+row*line,size,color);out=ch==='\n'?'':ch;row++;if(row>=maxLines)return row*line;}else out+=ch;}if(out)text(ctx,out,x,y+row++*line,size,color);return row*line;}
 function cover(ctx,img,x,y,w,h){if(!img)return;const ratio=Math.max(w/img.width,h/img.height),sw=w/ratio,sh=h/ratio;ctx.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,x,y,w,h);}
+function containFrame(img,x,y,w,h){if(!img||!img.width||!img.height)return{x,y,w,h};const ratio=Math.min(w/img.width,h/img.height),dw=img.width*ratio,dh=img.height*ratio;return{x:x+(w-dw)/2,y:y+(h-dh)/2,w:dw,h:dh};}
+function contain(ctx,img,x,y,w,h,fill){if(!img)return;const frame=containFrame(img,x,y,w,h);if(fill){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);}ctx.drawImage(img,frame.x,frame.y,frame.w,frame.h);}
 function circle(ctx,x,y,r,stroke,fill){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.2;ctx.stroke();}}
-module.exports={COLORS,rect,text,wrap,cover,circle};
+module.exports={COLORS,rect,text,wrap,cover,contain,containFrame,circle};
 
 },
 "ui/strokes.js":function(module,exports,__require){

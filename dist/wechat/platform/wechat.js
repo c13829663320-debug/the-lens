@@ -9,11 +9,18 @@ function createPlatform() {
     // windowWidth/windowHeight remain logical pixels. Normalize and clamp it
     // before layout math so the canvas cannot be scaled beyond the viewport.
     const raw=i.safeArea || {left:0,top:0,right:i.windowWidth,bottom:i.windowHeight};
+    // DevTools has returned safeArea in physical pixels while window metrics
+    // stayed logical. Detect that shape before clamping, otherwise a 2x top
+    // inset can push the whole layout farther down than the visible viewport.
+    const rawRight=Number(raw.right),rawBottom=Number(raw.bottom);
+    const physical=ratio>1&&((Number.isFinite(rawRight)&&rawRight>i.windowWidth)||(Number.isFinite(rawBottom)&&rawBottom>i.windowHeight));
+    const safeScale=physical?ratio:1;
+    const coordinate=(value,fallback)=>{const number=Number(value);return Number.isFinite(number)?number/safeScale:fallback;};
     const safe={
-      left:Math.max(0,Math.min(i.windowWidth,Number(raw.left)||0)),
-      top:Math.max(0,Math.min(i.windowHeight,Number(raw.top)||0)),
-      right:Math.max(0,Math.min(i.windowWidth,Number(raw.right)||i.windowWidth)),
-      bottom:Math.max(0,Math.min(i.windowHeight,Number(raw.bottom)||i.windowHeight))
+      left:Math.max(0,Math.min(i.windowWidth,coordinate(raw.left,0))),
+      top:Math.max(0,Math.min(i.windowHeight,coordinate(raw.top,0))),
+      right:Math.max(0,Math.min(i.windowWidth,coordinate(raw.right,i.windowWidth))),
+      bottom:Math.max(0,Math.min(i.windowHeight,coordinate(raw.bottom,i.windowHeight)))
     };
     if(safe.right<=safe.left){safe.left=0;safe.right=i.windowWidth;}
     if(safe.bottom<=safe.top){safe.top=0;safe.bottom=i.windowHeight;}
