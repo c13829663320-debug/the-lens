@@ -14,7 +14,7 @@ class Game {
     this.model=new GameModel(loaded.state||createState(),()=>{this.dirty=true;});
     this.audio=new AudioSystem(platform,m=>this.toast(m));this.screen='title';this.modal=null;this.mode='reality';
     this.hits=[];this.notices=[];this.loadedWarning=loaded.warning;this.lastTime=0;this.lastSave=0;this.savedTime=null;
-    this.hidden=false;this.dirty=false;this.fade=0;this.drag=null;this.drawings=[];this.bookPage=0;this.epilogue=0;
+    this.hidden=false;this.dirty=false;this.fade=0;this.drag=null;this.drawings=[];this.bookPage=0;this.epilogue=0;this.epilogueObserved={};this.settingsPaused=false;
     this.player={x:.16,y:.76,targetX:.16,targetY:.76,sceneId:null};this.walkTime=0;this.lensTime=0;
     this.titlePath='assets/scenes/scene_S01_reality_1280_v1.jpg';this.assets.load(this.titlePath);
     this.assets.load('assets/scenes/scene_S01_memory_1280_v1.jpg');
@@ -22,14 +22,14 @@ class Game {
     this.resize();platform.onResize(()=>this.resize());
     platform.onPointer({down:(x,y)=>this.down(x,y),move:(x,y)=>this.move(x,y),up:()=>this.up()});
     platform.onHide(()=>{this.hidden=true;this.save();this.audio.pause();});
-    platform.onShow(()=>{this.hidden=false;this.lastTime=0;if(this.screen==='explore')this.audio.environment(this.mode);});
+    platform.onShow(()=>this.resumeFromBackground());
   }
   start(){this.p.requestFrame(t=>this.frame(t));if(this.loadedWarning)this.toast(this.loadedWarning,9000);}
   resize(){const previous=this.W&&Strokes.bounds(this.W,this.H);this.size=this.p.size();const size=this.size||{};const width=Math.max(1,Number(size.width)||1),height=Math.max(1,Number(size.height)||1),raw=size.safe||{};const clamp=(value,fallback,max)=>{const number=Number(value);return Number.isFinite(number)?Math.max(0,Math.min(max,number)):fallback;};const left=clamp(raw.left,0,width),top=clamp(raw.top,0,height),rightCandidate=clamp(raw.right,width,width),bottomCandidate=clamp(raw.bottom,height,height),right=rightCandidate>left?rightCandidate:width,bottom=bottomCandidate>top?bottomCandidate:height;const aw=Math.max(1,right-left),ah=Math.max(1,bottom-top);this.portrait=aw/ah<1.25;this.W=this.portrait?600:1000;this.H=this.portrait?1050:600;this.scale=Math.min(aw/this.W,ah/this.H);this.ox=left+(aw-this.W*this.scale)/2;this.oy=top+(ah-this.H*this.scale)/2;if(previous&&this.modal&&this.modal.type==='draw'){this.up();this.modal.strokes=Strokes.resizeStrokes(this.modal.strokes,previous,Strokes.bounds(this.W,this.H));}this.drag=null;}
   snapshot(){return {screen:this.screen,modal:this.modal&&this.modal.type,mode:this.mode,state:JSON.parse(JSON.stringify(this.model.state)),savedTime:this.savedTime,notices:this.notices.map(n=>n.text),hits:this.hits.map(h=>({label:h.label,x:this.ox+(h.x+h.w/2)*this.scale,y:this.oy+(h.y+h.h/2)*this.scale,w:h.w*this.scale,h:h.h*this.scale}))};}
   toast(value,duration=5000){this.notices=[...this.notices.slice(-1),{text:value,until:this.p.now()+duration}];}
   save(){if(!this.dirty&&!this.hasSave)return;const r=this.store.save(this.model.state);if(r.ok){this.dirty=false;this.hasSave=true;this.savedTime=this.p.now();}else if(this.saveError!==r.error){this.saveError=r.error;this.toast('本地存档未成功：'+r.error,12000);}this.lastSave=this.p.now();}
-  begin(){this.model.restartChapter();this.screen='explore';this.mode='reality';this.dirty=true;this.enter(true);this.save();}
+  begin(){this.model.restartChapter();this.screen='explore';this.mode='reality';this.settingsPaused=false;this.dirty=true;this.enter(true);this.save();}
   resume(){this.screen='explore';this.mode='reality';if(this.model.state.completed){this.startEpilogue();return;}this.enter(false);}
   async loadMedia(){if(!MEDIA.baseUrl)return;try{const base=MEDIA.baseUrl.replace(/\/$/,'');const manifest=await this.p.fetchJson(base+MEDIA.manifestPath);if(manifest.version!==1||!Array.isArray(manifest.assets))throw Error('清单格式异常');for(const a of manifest.assets){if(a.type==='video/mp4'&&typeof a.id==='string'&&typeof a.url==='string'&&a.url.startsWith('/media/'))this.remoteClips[a.id]={url:base+a.url};}}catch{this.toast('CG服务暂不可用，将使用包内场景。');}}
   async enter(intro=true){
@@ -39,6 +39,10 @@ class Game {
     this.audio.apply(this.model.state.settings);this.audio.environment(s.id==='S08'||s.id==='S09'?'cave':'reality');
     if(intro&&s.intro&&s.intro.length)this.dialogue(s.intro,()=>this.optionalCG(s.id));
   }
+  audioMode(){const id=this.model&&this.model.scene&&this.model.scene.id;return id==='S08'||id==='S09'?'cave':this.mode;}
+  resumeFromBackground(){this.hidden=false;this.lastTime=0;if(this.screen==='explore'&&!this.modal&&!this.settingsPaused)this.audio.environment(this.audioMode());}
+  openSettings(){this.settingsPaused=this.screen==='explore';if(this.settingsPaused)this.audio.pause();this.modal={type:'settings'};}
+  closeModal(){const shouldResume=this.settingsPaused&&this.screen==='explore'&&!this.hidden;this.modal=null;this.drag=null;if(shouldResume)this.audio.environment(this.audioMode());if(this.settingsPaused)this.settingsPaused=false;}
   optionalCG(sceneId){const id=(MEDIA.sceneClips||{})[sceneId],clip=MEDIA.clips[sceneId]||this.remoteClips[id];if(!clip||!clip.url)return;this.modal={type:'cg'};this.audio.pause();const settings=this.model.state.settings;this.closeVideo=this.p.video(clip.url,()=>{this.modal=null;this.audio.environment(this.mode);},()=>{this.modal=null;this.toast('CG加载失败，已恢复场景。');this.audio.environment(this.mode);},()=>{}, {muted:!settings.audio,volume:settings.volume,topInset:this.oy+60*this.scale});}
   dialogue(lines,done){if(!lines||!lines.length){if(done)done();return;}this.modal={type:'dialogue',lines,index:0,done};}
   nextDialogue(){const m=this.modal;if(++m.index>=m.lines.length){this.modal=null;if(m.done)m.done();}}
@@ -54,7 +58,7 @@ class Game {
   puzzle(){this.modal={type:'puzzle',feedback:''};}
   attempt(id){const r=this.model.attempt(id,this.mode);if(r.ok){this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}else{this.modal.feedback=r.message;if(this.model.state.settings.vibration)this.p.vibrate();}}
   proceed(){const s=this.model.scene;this.dialogue(s.outro||[],()=>{if(!this.model.advance()){this.toast('先完成当前场景。');return;}this.save();if(this.model.state.completed)this.startEpilogue();else this.enter(true);});}
-  startEpilogue(){this.screen='epilogue';this.modal=null;this.mode='reality';this.epilogue=0;this.assets.load('assets/scenes/scene_S09_reality_1280_v1.jpg');this.audio.apply(this.model.state.settings);this.audio.environment('reality');}
+  startEpilogue(){this.screen='epilogue';this.modal=null;this.mode='reality';this.epilogue=0;this.epilogueObserved={};this.settingsPaused=false;this.assets.load('assets/scenes/scene_S09_reality_1280_v1.jpg');this.audio.apply(this.model.state.settings);this.audio.environment('reality');}
   finish(){this.screen='ending';this.modal=null;this.endingTime=this.p.now();this.fade=0;this.audio.environment('ending');}
   frame(time){const dt=this.lastTime?Math.min((time-this.lastTime)/1000,.1):0;this.lastTime=time;
     this.lensTime+=dt;
@@ -87,6 +91,7 @@ class Game {
     if(distance>.2){this.movePlayerTo(x,y);this.toast('阿迟走近了 '+object.label+'。',1200);return;}
     this.observe(object);
   }
+  openObjects(){this.modal={type:'objects'};}
   drawActor(stage,x,y,label,color,primary=false){
     const c=this.ctx,px=stage.x+x*stage.w,py=stage.y+y*stage.h,walk=Math.sin(this.walkTime*8)*1.5;
     c.save();c.globalAlpha=primary?1:.82;c.strokeStyle=color;c.fillStyle=color;c.lineWidth=2;
@@ -139,7 +144,7 @@ class Game {
     wrap(c,'风穿过废墟。\n一枚透镜，仍留着过去的光。',x,cy+156,this.portrait?480:370,21,C.paper,34);
     const by=this.portrait?660:cy+252;this.button('开始旅程  →',x,by,250,()=>{if(this.hasSave)this.modal={type:'confirm',message:'开始新旅程将替换现有本地进度。',action:()=>this.begin()};else this.begin();},true);
     this.button(this.hasSave?'继续旅程':'继续旅程 · 暂无存档',x,by+62,250,()=>{if(this.hasSave)this.resume();else this.toast('尚无本地旅程，先选择开始旅程。');});
-    const ey=this.portrait?H-108:H-54;this.button('设置',x,ey,105,()=>this.modal={type:'settings'},false,42);this.button('制作信息',x+120,ey,136,()=>this.modal={type:'credits'},false,42);
+    const ey=this.portrait?H-108:H-54;this.button('设置',x,ey,105,()=>this.openSettings(),false,42);this.button('制作信息',x+120,ey,136,()=>this.modal={type:'credits'},false,42);
     if(!this.portrait){const mx=W-250,my=H*.46,r=155;c.save();circle(c,mx,my,r);c.clip();cover(c,this.assets.get('assets/scenes/scene_S01_memory_1280_v1.jpg'),W-475,80,450,420);c.restore();circle(c,mx,my,r,C.accent);circle(c,mx,my,r+8,'#a7996b50');text(c,'MEMORY / 001',mx,my+r+36,14,C.accent,'center');}
     text(c,'原作最终剧本改编 · 本地存档',W-32,H-22,13,C.muted,'right');
   }
@@ -161,7 +166,7 @@ class Game {
     this.drawLensOverlay(stage,state);
     const header=this.portrait?{brand:24,title:62,goal:108}:{brand:20,title:48,goal:70};
     text(c,'T H E   L E N S',24,header.brand,15,C.accent);text(c,s.subtitle||s.title,24,header.title,25,C.paper,'left','serif');
-    const idx=SCENES.findIndex(sc=>sc.id===s.id);text(c,`${String(idx+1).padStart(2,'0')} / ${SCENES.length}`,W-160,22,15,C.muted,'right');this.button('暂停',W-128,8,102,()=>{this.save();this.modal={type:'settings'};},false,44);
+    const idx=SCENES.findIndex(sc=>sc.id===s.id);text(c,`${String(idx+1).padStart(2,'0')} / ${SCENES.length}`,W-160,22,15,C.muted,'right');this.button('暂停',W-128,8,102,()=>{this.save();this.openSettings();},false,44);
     if(this.portrait)wrap(c,s.goal,24,header.goal,W-48,19,C.muted,26,2);else text(c,s.goal,24,header.goal,17,C.muted);
     // Keep the scene image clear. Mode/status text belongs to the HUD below it;
     // drawing it at stage.y used to cover the artwork near the top edge.
@@ -180,7 +185,7 @@ class Game {
     const hudTop=stage.y+stage.h;rect(c,0,hudTop,W,H-hudTop,C.bg);this.line(0,hudTop,W,C.line);
     const gy=this.portrait?Math.max(596,hudTop+28):hudTop+16;const required=s.puzzle.required;const count=required.filter(id=>state.clues.includes(id)).length;
     text(c,`观察记录  ${count} / ${required.length}`,24,gy,17,C.muted);
-    if(this.portrait)this.button('观察条目',W-165,gy-20,140,()=>this.modal={type:'objects'},false,42);
+    if(this.portrait)this.button('观察条目',W-165,gy-20,140,()=>this.openObjects(),false,42);
     if(this.portrait)text(c,this.mode==='memory'?'透镜影像  ·  左侧为现实':'现实  ·  观察可触摸的事物',24,gy+30,15,C.muted);
     if(this.portrait){wrap(c,'透镜只能显现影像。判断与行动，仍在现实之中。',24,654,W-48,18,C.muted,28);this.button('线索册',24,740,160,()=>{this.bookPage=0;this.modal={type:'notebook'};});this.button('章节地图',200,740,160,()=>this.modal={type:'map'});}
     // Keep the action row and the lens status inside the logical canvas. The
@@ -188,16 +193,20 @@ class Game {
     // the battery label in the WeChat simulator.
     const actionH=this.portrait?48:44;
     const by=this.portrait?Math.min(860,H-190):H-actionH-16;
-    if(!this.portrait){this.button('线索册',24,by,110,()=>{this.bookPage=0;this.modal={type:'notebook'};},false,actionH);this.button('章节',146,by,94,()=>this.modal={type:'map'},false,actionH);}
+    this.renderExploreActions(state,s,by,actionH,gy);
+  }
+  renderExploreActions(state,s,by,actionH,gy){
+    const c=this.ctx,W=this.W,H=this.H;
+    if(!this.portrait){this.button('线索册',24,by,110,()=>{this.bookPage=0;this.modal={type:'notebook'};},false,actionH);this.button('章节',146,by,94,()=>this.modal={type:'map'},false,actionH);this.button('观察条目',248,by,160,()=>this.openObjects(),false,actionH);}
     const lx=this.portrait?24:270;this.button(this.mode==='memory'?'收起透镜':'举起透镜',lx,by,160,()=>this.toggleLens(),this.mode==='memory',actionH);
     const power=state.lensAcquired?(state.battery<=0?'断电':state.battery<1?'<1%':`${Math.ceil(state.battery)}%`):'未取得';
     if(this.portrait){const powerY=Math.min(by+63,H-27);text(c,`透镜 · ${power}`,lx+80,powerY,15,C.muted,'center');}
     else text(c,`透镜 · ${power}`,W-24,gy,14,C.muted,'right');
     this.button(state.brightness===2?'亮度 · 高':'亮度 · 低',lx+176,by,130,()=>{if(this.model.canLens){this.model.setBrightness(state.brightness===1?2:1);this.save();}else this.toast('透镜当前不可启动。');},false,actionH);
     const solved=state.solved.includes(s.puzzle.id);this.button(solved?'继续  →':'采取行动  →',W-220,by,196,()=>solved?this.proceed():this.puzzle(),true,actionH);
-    if(this.portrait)text(c,this.savedTime?'进度已保存到本机':'进度将在行动后保存',24,H-38,15,C.muted);
+    if(this.portrait)text(this.ctx,this.savedTime?'进度已保存到本机':'进度将在行动后保存',24,H-38,15,C.muted);
   }
-  panel(title,subtitle){const c=this.ctx;rect(c,0,0,this.W,this.H,'#030806df');const x=24,y=24,w=this.W-48,h=this.H-48;rect(c,x,y,w,h,'#101a17f8',C.line,5);text(c,title,x+28,y+36,28,C.paper,'left','serif');if(subtitle)text(c,subtitle,x+28,y+74,16,C.muted);this.button('返回',this.W-144,38,94,()=>{this.modal=null;this.drag=null;},false,42);this.line(50,122,this.W-100);}
+  panel(title,subtitle){const c=this.ctx;rect(c,0,0,this.W,this.H,'#030806df');const x=24,y=24,w=this.W-48,h=this.H-48;rect(c,x,y,w,h,'#101a17f8',C.line,5);text(c,title,x+28,y+36,28,C.paper,'left','serif');if(subtitle)text(c,subtitle,x+28,y+74,16,C.muted);this.button('返回',this.W-144,38,94,()=>this.closeModal(),false,42);this.line(50,122,this.W-100);}
   renderModal(){const m=this.modal,c=this.ctx,W=this.W,H=this.H;
     // Modal controls must fully replace exploration hit regions.
     this.hits=[];
@@ -214,7 +223,7 @@ class Game {
       toggle('叙事字幕','subtitles');toggle('震动','vibration');toggle('简化动画 / 低性能','lowMotion');
       const bottom=this.portrait?H-180:H-104;this.button('重新开始章节',54,bottom,205,()=>this.modal={type:'confirm',message:'重新开始整个章节？设置会保留，当前进度会被替换。',action:()=>this.begin()});
       this.button('隐私与制作',this.portrait?280:276,bottom,190,()=>this.modal={type:'credits'});
-      if(this.screen==='explore')this.button('回到标题',this.portrait?54:W-229,this.portrait?bottom+65:bottom,175,()=>{this.save();this.screen='title';this.modal=null;this.audio.pause();});return;
+      if(this.screen==='explore')this.button('回到标题',this.portrait?54:W-229,this.portrait?bottom+65:bottom,175,()=>{this.save();this.screen='title';this.modal=null;this.settingsPaused=false;this.audio.pause();});return;
     }
     if(m.type==='credits'){
       this.panel('制作 / 隐私','THE LENS · 最终剧本改编开发版');
@@ -265,13 +274,20 @@ class Game {
     const delta=Math.hypot(m.cx-tx,m.cy-ty);text(c,delta<12?'五处刻点与星光重合。':'缓慢移动。星星不会替你改变位置。',54,H-128,19,C.muted);
     this.button('记住这片星空',W-286,H-98,232,()=>{if(delta>=12){this.toast('继续微调镜缘的位置，让五处刻点都与星光重合。');return;}const r=this.model.observe(m.object.id,'reality');this.modal=null;this.save();this.dialogue(r.dialogue||m.object.dialogue);},true);
   }
+  epilogueTargets(){const W=this.W,H=this.H;if(this.epilogue===1){const box=this.portrait?{x:54,y:490,w:W-108,h:270}:{x:W*.52,y:H*.53,w:W*.42,h:135};return [{id:'painting',label:'新画',x:box.x,y:box.y,w:box.w,h:Math.max(70,box.h*.62)},{id:'charcoal',label:'炭灰',x:box.x,y:box.y+Math.max(70,box.h*.62),w:box.w,h:Math.max(45,box.h*.38)}];}if(this.epilogue===3){return [{id:'fissure',label:'裂隙',x:this.portrait?W-250:W*.7,y:this.portrait?H*.28:H*.2,w:this.portrait?190:W*.24,h:this.portrait?250:H*.55}];}return [];
+  }
+  registerEpilogueTargets(){for(const target of this.epilogueTargets())this.hit(target.label,target.x,target.y,target.w,target.h,()=>this.observeEpilogueTarget(target.id));}
+  observeEpilogueTarget(id){if(!this.epilogueTargets().some(target=>target.id===id))return false;this.epilogueObserved[id]=true;return true;}
+  epilogueReady(){if(this.epilogue===1)return !!(this.epilogueObserved.painting&&this.epilogueObserved.charcoal);if(this.epilogue===3)return !!this.epilogueObserved.fissure;return true;}
   renderEpilogue(){const c=this.ctx,W=this.W,H=this.H;cover(c,this.assets.get('assets/scenes/scene_S09_reality_1280_v1.jpg'),0,0,W,H);rect(c,0,0,W,H,'#0b100dc8');
     const cards=[['清晨','小花端着陶碗，打开木栅。洞中没有回应。'],['新画','她认出墙上那只抓住手腕的手。指尖沾上炭灰，她没有擦掉。'],['五个点','画旁，一个小人朝外迈步。地上有拖动的碎石，断电的透镜不在原处。'],['晨光','她停在裂隙前。风吹过脸，洞外传来鸟鸣。']];const [label,copy]=cards[this.epilogue];
     text(c,label,54,H*.25,35,C.paper,'left','serif');if(this.model.state.settings.subtitles)wrap(c,copy,54,H*.25+70,W-108,25,C.paper,40,5);
     if(this.epilogue===1||this.epilogue===2){const box=this.portrait?{x:54,y:490,w:W-108,h:270}:{x:W*.52,y:H*.53,w:W*.42,h:135};rect(c,box.x,box.y,box.w,box.h,'#32362dee',C.line,3);c.lineWidth=2.5;c.lineCap='round';c.strokeStyle='#c4bea9';for(const stroke of this.model.state.artwork){c.beginPath();stroke.forEach(([x,y],i)=>{const xx=box.x+x*box.w,yy=box.y+y*box.h;if(i===0)c.moveTo(xx,yy);else c.lineTo(xx,yy);});c.stroke();}}
+    for(const target of this.epilogueTargets()){const seen=!!this.epilogueObserved[target.id];rect(c,target.x,target.y,target.w,target.h,seen?'#d7dcce24':'#101a17aa',seen?C.accent:C.line,3);text(c,seen?`已查看 · ${target.label}`:`触摸 ${target.label}`,target.x+target.w/2,target.y+target.h/2,16,seen?C.accent:C.paper,'center');}
+    this.registerEpilogueTargets();
     // A narrow strip of neutral natural light; the real world stays desaturated.
     if(this.epilogue===3){const g=c.createLinearGradient(W*.72,0,W,0);g.addColorStop(0,'#d7dcce00');g.addColorStop(1,'#d7dcce65');c.fillStyle=g;c.fillRect(W*.7,0,W*.3,H);}
-    this.button(this.epilogue===3?'看向晨光':'继续',W-224,H-106,170,()=>{if(this.epilogue===3)this.finish();else this.epilogue++;},true);
+    this.button(this.epilogue===3?'看向晨光':'继续',W-224,H-106,170,()=>{if(!this.epilogueReady()){this.toast(this.epilogue===1?'先触摸新画和炭灰。':'先触摸裂隙，再看向晨光。');return;}if(this.epilogue===3)this.finish();else this.epilogue++;},true);
   }
   renderEnding(){const c=this.ctx;c.fillStyle='#000';c.fillRect(0,0,this.W,this.H);const elapsed=this.p.now()-this.endingTime;if(elapsed<2000){if(this.audio.amb)this.audio.amb.volume=this.model.state.settings.audio?this.model.state.settings.volume*(1-elapsed/2000):0;}else{this.audio.pause();text(c,'《透镜》',this.W/2,this.H/2,50,C.paper,'center','serif');}}
 }

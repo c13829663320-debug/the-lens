@@ -68,3 +68,77 @@ test('completed-save epilogue restores saved audio settings', () => {
   assert.deepEqual(applied, [settings]);
   assert.equal(game.screen, 'epilogue');
 });
+
+test('epilogue requires touching the new painting, charcoal and fissure before continuing', () => {
+  const game = Object.create(Game.prototype);
+  game.W = 600;
+  game.H = 1050;
+  game.portrait = true;
+  game.epilogue = 1;
+  game.epilogueObserved = {};
+  game.hits = [];
+  game.registerEpilogueTargets();
+  assert.deepEqual(game.hits.map(hit => hit.label), ['新画', '炭灰']);
+  assert.equal(game.epilogueReady(), false);
+
+  game.hitAt(300, 540, 0);
+  assert.equal(game.epilogueReady(), false);
+  game.hitAt(300, 700, 0);
+  assert.equal(game.epilogueReady(), true);
+
+  game.epilogue = 3;
+  game.epilogueObserved = {};
+  game.hits = [];
+  game.registerEpilogueTargets();
+  assert.deepEqual(game.hits.map(hit => hit.label), ['裂隙']);
+  assert.equal(game.epilogueReady(), false);
+  game.hitAt(450, 420, 0);
+  assert.equal(game.epilogueReady(), true);
+});
+
+test('exploration pause stops audio and restores the scene state on return', () => {
+  const game = Object.create(Game.prototype);
+  const events = [];
+  game.screen = 'explore';
+  game.modal = null;
+  game.hidden = false;
+  game.settingsPaused = false;
+  game.mode = 'reality';
+  game.model = { scene: { id: 'S09' } };
+  game.audio = {
+    pause: () => events.push('pause'),
+    environment: mode => events.push(`environment:${mode}`),
+  };
+
+  game.openSettings();
+  assert.equal(game.modal.type, 'settings');
+  assert.deepEqual(events, ['pause']);
+
+  game.resumeFromBackground();
+  assert.deepEqual(events, ['pause']);
+  game.closeModal();
+  assert.deepEqual(events, ['pause', 'environment:cave']);
+});
+
+test('landscape action row exposes the recorded-object browser', () => {
+  const game = Object.create(Game.prototype);
+  const labels = [];
+  game.W = 1000;
+  game.H = 600;
+  game.portrait = false;
+  game.mode = 'reality';
+  game.bookPage = 0;
+  game.modal = null;
+  game.ctx = { fillText() {} };
+  game.button = (label, x, y, width, fn) => labels.push({ label, fn });
+  game.model = { canLens: false };
+  game.toggleLens = () => {};
+  game.save = () => {};
+  game.toast = () => {};
+  game.renderExploreActions({ lensAcquired: false, battery: 0, brightness: 1, solved: [] }, { puzzle: { id: 'puzzle' } }, 540, 44, 556);
+
+  const objects = labels.find(button => button.label === '观察条目');
+  assert.ok(objects);
+  objects.fn();
+  assert.deepEqual(game.modal, { type: 'objects' });
+});
