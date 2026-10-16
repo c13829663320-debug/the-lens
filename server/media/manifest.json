@@ -12,6 +12,66 @@
       "height": 720,
       "durationMs": 8042,
       "caption": "商场显影 · CG创作草稿。建筑构图与原场景不同，仅供氛围预览，待美术确认。"
+    },
+    {
+      "id": "cg_s10_montage",
+      "file": "cg_s10_montage_t01_v01_720p.mp4",
+      "status": "draft_needs_art_review",
+      "canonical": false,
+      "bytes": 9251079,
+      "sha256": "28759b61936385b7b2ff698c64931685074d49be42ef3635d2f8dd77b99de3a1",
+      "width": 1280,
+      "height": 720,
+      "durationMs": 10080,
+      "caption": "旧时代蒙太奇 · Seedance 2.5 草稿，待编剧/美术审核。"
+    },
+    {
+      "id": "cg_s02_lens_reveal",
+      "file": "cg_s02_lens_reveal_t01_v01_720p.mp4",
+      "status": "draft_needs_art_review",
+      "canonical": false,
+      "bytes": 4254604,
+      "sha256": "4eeae12196f1d8b809ae6c37574cd659714feaddfff31034116eddff0b04ccdb",
+      "width": 1280,
+      "height": 720,
+      "durationMs": 6080,
+      "caption": "食品区显影 · Seedance 2.5 草稿，待同构与角色边界审核。"
+    },
+    {
+      "id": "cg_s05_missed_bridge",
+      "file": "cg_s05_missed_bridge_t01_v01_720p.mp4",
+      "status": "draft_needs_art_review",
+      "canonical": false,
+      "bytes": 8041506,
+      "sha256": "c8661b57c1320ae8d87a6a5a72ba19b2a82913b9ae451e9232c432aa0ef06463",
+      "width": 1280,
+      "height": 720,
+      "durationMs": 8064,
+      "caption": "断桥救援 · Seedance 2.5 草稿，待小花/族长造型与空间边界审核。"
+    },
+    {
+      "id": "cg_s09_drawing_stars",
+      "file": "cg_s09_drawing_stars_t01_v01_720p.mp4",
+      "status": "draft_needs_art_review",
+      "canonical": false,
+      "bytes": 5900957,
+      "sha256": "675d1f442c2413e20445a3eca24de8e43b7559bb3c07b2c2ee5627e70a7d45f9",
+      "width": 1280,
+      "height": 720,
+      "durationMs": 8064,
+      "caption": "洞穴炭画与五点 · Seedance 2.5 草稿，待五点/断电/开放结尾审核。"
+    },
+    {
+      "id": "cg_end_morning",
+      "file": "cg_end_morning_t01_v01_720p.mp4",
+      "status": "draft_needs_art_review",
+      "canonical": false,
+      "bytes": 10253518,
+      "sha256": "2e59575977733564659b88714762c32f0eeebbb2cec5ff61956d309f85254946",
+      "width": 1280,
+      "height": 720,
+      "durationMs": 8064,
+      "caption": "片尾晨光 · Seedance 2.5 草稿，待开放式结尾与小花造型审核。"
     }
   ]
 }

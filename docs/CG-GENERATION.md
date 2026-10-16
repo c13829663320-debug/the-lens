@@ -17,3 +17,17 @@
 首条图生任务失败后，获得一次有实质变化的恢复重试授权：移除`image`字段，使用参考聊天已验证的纯文本请求格式。第二任务ID为`task_5ZmtlE4uw1pl4zv8oehX6gzdUlnZ68p9`，HTTP 200、初始`queued`，模型、时长、画质和比例相同，`generate_audio:true`，提示词仅要求环境风、无语音或音乐。第二提交响应同样为`price=4`、`cost_quota=2000000`。两次提交价格字段合计8个平台单位，单位以及首失败退款仍未确认，不能声称首任务未扣费。
 
 只轮询第二任务，没有继续重投。视频已保存到`server/media/cg_s01_reveal_720p_v1.mp4`，并通过ffprobe和ffmpeg全量解码；首帧、中帧、尾帧已生成人工审阅接触表。尚未进行微信真机播放、音频听感审阅或逐帧美术批准。该视频的纯文本生成构图与原S01图片不同，manifest标注为草稿预览，不能替换canonical场景图。
+
+## 2026-10-17 Seedance 2.5 批次
+
+按参考聊天中的同源调用方式，在已登录平台页面内提交了五条纯文本任务。模型为`doubao-seedance-2-5-260628`，横屏16:9、720p、生成环境音；Bearer 令牌只在浏览器页面内存中使用，未写入仓库。任务均返回HTTP 200并完成，结果下载后通过`ffprobe`与`ffmpeg`完整解码。
+
+| 镜头 | 任务ID | 文件 | 时长 | 字节数 | SHA-256 | 当前状态 |
+|---|---|---|---:|---:|---|---|
+| S10 旧时代蒙太奇 | `task_KXo6cYiMJOQCf7YmvCOH1BlTnmJSgSS4` | `cg_s10_montage_t01_v01_720p.mp4` | 10.08s | 9,251,079 | `28759b61936385b7b2ff698c64931685074d49be42ef3635d2f8dd77b99de3a1` | `draft_needs_art_review` |
+| S02 食品区显影 | `task_dtwKEljejrXPLBDefjDvwZTt8hNMOcAI` | `cg_s02_lens_reveal_t01_v01_720p.mp4` | 6.08s | 4,254,604 | `4eeae12196f1d8b809ae6c37574cd659714feaddfff31034116eddff0b04ccdb` | `draft_needs_art_review` |
+| S05 断桥救援 | `task_z0ib7X6b3JV5cNmtucTgCt6xCcHdopZp` | `cg_s05_missed_bridge_t01_v01_720p.mp4` | 8.064s | 8,041,506 | `c8661b57c1320ae8d87a6a5a72ba19b2a82913b9ae451e9232c432aa0ef06463` | `draft_needs_art_review` |
+| S09 炭画与五点 | `task_GN6PQBCgkh77XUPvFLztLO946to4Zdbj` | `cg_s09_drawing_stars_t01_v01_720p.mp4` | 8.064s | 5,900,957 | `675d1f442c2413e20445a3eca24de8e43b7559bb3c07b2c2ee5627e70a7d45f9` | `draft_needs_art_review` |
+| 片尾晨光 | `task_YrbvcShLb0LLqZHZLIVwIKLljOgp8DF5` | `cg_end_morning_t01_v01_720p.mp4` | 8.064s | 10,253,518 | `2e59575977733564659b88714762c32f0eeebbb2cec5ff61956d309f85254946` | `draft_needs_art_review` |
+
+本批次尚未进入`canonical`或微信端远程播放清单。抽帧检查发现模型对人物外观、空间细节和构图有自由发挥，下一步需按`CG-SHOTLIST.md`逐镜头确认；不合格镜头保留任务记录并重新生成新版本，不覆盖当前文件。
