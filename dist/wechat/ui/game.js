@@ -72,11 +72,17 @@ class Game {
     if(d<.002){this.player.x=this.player.targetX;this.player.y=this.player.targetY;return;}
     const step=Math.min(d,dt*.7);this.player.x+=dx/d*step;this.player.y+=dy/d*step;this.walkTime+=dt;
   }
+  sceneFrame(stage=this.stage()){
+    const scene=this.model&&this.model.scene;
+    const active=scene&&(this.sceneImage||(this.mode==='memory'&&scene.memory?scene.memory:scene.reality));
+    const image=this.assets&&this.assets.get&&active?this.assets.get(active):null;
+    return containFrame(image,stage.x,stage.y,stage.w,stage.h);
+  }
   movePlayerTo(x,y){
-    const stage=this.stage();this.player.targetX=Math.max(.08,Math.min(.92,(x-stage.x)/stage.w));this.player.targetY=Math.max(.16,Math.min(.9,(y-stage.y)/stage.h));
+    const frame=this.sceneFrame();this.player.targetX=Math.max(.08,Math.min(.92,(x-frame.x)/frame.w));this.player.targetY=Math.max(.16,Math.min(.9,(y-frame.y)/frame.h));
   }
   interactAt(object,x,y){
-    const stage=this.stage(),tx=Math.max(0,Math.min(1,(x-stage.x)/stage.w)),ty=Math.max(0,Math.min(1,(y-stage.y)/stage.h));
+    const frame=this.sceneFrame(),tx=Math.max(0,Math.min(1,(x-frame.x)/frame.w)),ty=Math.max(0,Math.min(1,(y-frame.y)/frame.h));
     const distance=Math.hypot(this.player.x-tx,this.player.y-ty);
     if(distance>.2){this.movePlayerTo(x,y);this.toast('阿迟走近了 '+object.label+'。',1200);return;}
     this.observe(object);
@@ -87,12 +93,12 @@ class Game {
     c.beginPath();c.arc(px,py-15,6,0,Math.PI*2);c.fill();c.beginPath();c.moveTo(px,py-8);c.lineTo(px,py+10);c.moveTo(px,py-2);c.lineTo(px-7,py+5);c.moveTo(px,py-2);c.lineTo(px+7,py+5);c.moveTo(px,py+10);c.lineTo(px-6,py+20+walk);c.moveTo(px,py+10);c.lineTo(px+6,py+20-walk);c.stroke();
     text(c,label,px,py+34,13,color,'center');c.restore();
   }
-  drawActors(stage){
-    this.drawActor(stage,this.player.x,this.player.y,'阿迟',C.accent,true);
+  drawActors(frame){
+    this.drawActor(frame,this.player.x,this.player.y,'阿迟',C.accent,true);
     const id=this.model.scene.id;
-    if(id==='S02'||id==='S06')this.drawActor(stage,.76,.65,'小花','#d2c5a1');
-    if(id==='S05')this.drawActor(stage,.27,.59,'小花','#d2c5a1');
-    if(id==='S05'||id==='S07')this.drawActor(stage,.72,.52,'族长','#a9b3aa');
+    if(id==='S02'||id==='S06')this.drawActor(frame,.76,.65,'小花','#d2c5a1');
+    if(id==='S05')this.drawActor(frame,.27,.59,'小花','#d2c5a1');
+    if(id==='S05'||id==='S07')this.drawActor(frame,.72,.52,'族长','#a9b3aa');
   }
   drawLensOverlay(stage,state){
     if(this.mode!=='memory')return;
@@ -142,7 +148,7 @@ class Game {
   // on short landscape viewports and in the WeChat simulator. The compact
   // landscape header leaves more of the artwork visible while keeping a fixed
   // band for controls below it.
-  stage(){return this.portrait?{x:0,y:142,w:this.W,h:420}:{x:128,y:76,w:744,h:420};}
+  stage(){return this.portrait?{x:0,y:142,w:this.W,h:420}:{x:128,y:76,w:744,h:390};}
   renderExplore(){const c=this.ctx,s=this.model.scene,W=this.W,H=this.H,stage=this.stage(),state=this.model.state;
     rect(c,0,0,W,H,C.bg);const active=this.sceneImage||(this.mode==='memory'&&s.memory?s.memory:s.reality);
     // Keep the source artwork's full 16:9 composition visible inside the
@@ -163,30 +169,32 @@ class Game {
     if(this.assets.error(active)){rect(c,40,stage.y+60,W-80,110,'#0a1210e8',C.line);text(c,'场景图片加载失败，观察条目仍可使用。',W/2,stage.y+94,20,C.paper,'center');this.button('重试加载',W/2-80,stage.y+115,160,()=>this.assets.load(active,true));}
     const objects=s.objects.filter(o=>o.mode==='both'||o.mode===this.mode);
     for(const [i,o] of objects.entries()){
-      let x=imageFrame.x+o.x*imageFrame.w,y=imageFrame.y+o.y*imageFrame.h;x=Math.max(stage.x+32,Math.min(stage.x+stage.w-32,x));y=Math.max(stage.y+65,Math.min(stage.y+stage.h-54,y));
+      let x=imageFrame.x+o.x*imageFrame.w,y=imageFrame.y+o.y*imageFrame.h;x=Math.max(imageFrame.x+32,Math.min(imageFrame.x+imageFrame.w-32,x));y=Math.max(imageFrame.y+65,Math.min(imageFrame.y+imageFrame.h-54,y));
       const seen=state.clues.includes(o.clue.id),distance=Math.hypot(this.player.x-o.x,this.player.y-o.y),near=distance<.2;
       circle(c,x,y,seen?16:near?15:11,seen?C.accent:near?C.paper:'#9ba49a88','#0c1712cc');text(c,seen?'✓':near?String(i+1):'·',x,y,15,C.paper,'center');
       const tw=Math.min(210,Math.max(115,o.label.length*17));rect(c,x-tw/2,y+22,tw,34,'#0c1712e8',null,3);text(c,o.label,x,y+39,16,C.paper,'center');
       this.hit(o.label,x-28,y-28,56,56,()=>this.interactAt(o,x,y));
     }
-    this.drawActors(stage);
+    this.drawActors(imageFrame);
     if(!objects.length)text(c,'这一层影像没有新的观察点。',W/2,stage.y+stage.h*.65,19,C.paper,'center');
     const hudTop=stage.y+stage.h;rect(c,0,hudTop,W,H-hudTop,C.bg);this.line(0,hudTop,W,C.line);
-    const gy=this.portrait?Math.max(596,hudTop+28):hudTop+28;const required=s.puzzle.required;const count=required.filter(id=>state.clues.includes(id)).length;
-    text(c,`观察记录  ${count} / ${required.length}`,24,gy,17,C.muted);this.button('观察条目',W-165,gy-20,140,()=>this.modal={type:'objects'},false,42);
-    text(c,this.mode==='memory'?'透镜影像  ·  左侧为现实':'现实  ·  观察可触摸的事物',24,gy+34,15,C.muted);
+    const gy=this.portrait?Math.max(596,hudTop+28):hudTop+16;const required=s.puzzle.required;const count=required.filter(id=>state.clues.includes(id)).length;
+    text(c,`观察记录  ${count} / ${required.length}`,24,gy,17,C.muted);
+    if(this.portrait)this.button('观察条目',W-165,gy-20,140,()=>this.modal={type:'objects'},false,42);
+    if(this.portrait)text(c,this.mode==='memory'?'透镜影像  ·  左侧为现实':'现实  ·  观察可触摸的事物',24,gy+30,15,C.muted);
     if(this.portrait){wrap(c,'透镜只能显现影像。判断与行动，仍在现实之中。',24,654,W-48,18,C.muted,28);this.button('线索册',24,740,160,()=>{this.bookPage=0;this.modal={type:'notebook'};});this.button('章节地图',200,740,160,()=>this.modal={type:'map'});}
     // Keep the action row and the lens status inside the logical canvas. The
     // previous landscape baseline was y=601 on a 600px canvas, which clipped
     // the battery label in the WeChat simulator.
-    const by=this.portrait?Math.min(860,H-190):Math.min(510,H-90);
-    if(!this.portrait){this.button('线索册',24,by,110,()=>{this.bookPage=0;this.modal={type:'notebook'};});this.button('章节',146,by,94,()=>this.modal={type:'map'});}
-    const lx=this.portrait?24:270;this.button(this.mode==='memory'?'收起透镜':'举起透镜',lx,by,160,()=>this.toggleLens(),this.mode==='memory');
+    const actionH=this.portrait?48:44;
+    const by=this.portrait?Math.min(860,H-190):H-actionH-16;
+    if(!this.portrait){this.button('线索册',24,by,110,()=>{this.bookPage=0;this.modal={type:'notebook'};},false,actionH);this.button('章节',146,by,94,()=>this.modal={type:'map'},false,actionH);}
+    const lx=this.portrait?24:270;this.button(this.mode==='memory'?'收起透镜':'举起透镜',lx,by,160,()=>this.toggleLens(),this.mode==='memory',actionH);
     const power=state.lensAcquired?(state.battery<=0?'断电':state.battery<1?'<1%':`${Math.ceil(state.battery)}%`):'未取得';
-    const powerY=Math.min(by+63,H-27);
-    text(c,`透镜 · ${power}`,lx+80,powerY,15,C.muted,'center');
-    this.button(state.brightness===2?'亮度 · 高':'亮度 · 低',lx+176,by,130,()=>{if(this.model.canLens){this.model.setBrightness(state.brightness===1?2:1);this.save();}else this.toast('透镜当前不可启动。');});
-    const solved=state.solved.includes(s.puzzle.id);this.button(solved?'继续  →':'采取行动  →',W-220,by,196,()=>solved?this.proceed():this.puzzle(),true);
+    if(this.portrait){const powerY=Math.min(by+63,H-27);text(c,`透镜 · ${power}`,lx+80,powerY,15,C.muted,'center');}
+    else text(c,`透镜 · ${power}`,W-24,gy,14,C.muted,'right');
+    this.button(state.brightness===2?'亮度 · 高':'亮度 · 低',lx+176,by,130,()=>{if(this.model.canLens){this.model.setBrightness(state.brightness===1?2:1);this.save();}else this.toast('透镜当前不可启动。');},false,actionH);
+    const solved=state.solved.includes(s.puzzle.id);this.button(solved?'继续  →':'采取行动  →',W-220,by,196,()=>solved?this.proceed():this.puzzle(),true,actionH);
     if(this.portrait)text(c,this.savedTime?'进度已保存到本机':'进度将在行动后保存',24,H-38,15,C.muted);
   }
   panel(title,subtitle){const c=this.ctx;rect(c,0,0,this.W,this.H,'#030806df');const x=24,y=24,w=this.W-48,h=this.H-48;rect(c,x,y,w,h,'#101a17f8',C.line,5);text(c,title,x+28,y+36,28,C.paper,'left','serif');if(subtitle)text(c,subtitle,x+28,y+74,16,C.muted);this.button('返回',this.W-144,38,94,()=>{this.modal=null;this.drag=null;},false,42);this.line(50,122,this.W-100);}

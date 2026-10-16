@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:20-alpine
 ENV NODE_ENV=production PORT=8080 MEDIA_ROOT=/app/media
 WORKDIR /app
 COPY --chown=node:node package.json server.mjs ./

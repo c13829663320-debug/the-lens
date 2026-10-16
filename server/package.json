@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "description": "Optional read-only media service for THE LENS, deployable on Alibaba Cloud ECS.",
-  "engines": { "node": ">=22" },
+  "engines": { "node": ">=20" },
   "scripts": { "start": "node server.mjs", "test": "node --test test/*.test.mjs" }
 }

@@ -42,3 +42,17 @@ test('stage taps move the player before observing a distant object', () => {
   game.interactAt(object, 800, 180);
   assert.deepEqual(observed, ['terminal']);
 });
+
+test('letterboxed stage taps use the contained artwork frame for player coordinates', () => {
+  const game = Object.create(Game.prototype);
+  game.player = { x: 0.1, y: 0.8, targetX: 0.1, targetY: 0.8 };
+  game.stage = () => ({ x: 0, y: 0, w: 600, h: 420 });
+  game.assets = { get: () => ({ width: 1280, height: 720 }) };
+  game.model = { scene: { reality: 'scene', memory: null } };
+  game.mode = 'reality';
+
+  game.movePlayerTo(300, 311.25);
+
+  assert.equal(game.player.targetX, 0.5);
+  assert.equal(game.player.targetY, 0.8);
+});

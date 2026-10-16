@@ -1,5 +1,7 @@
 # CG 制作与接入计划（豆包 Seedance）
 
+后续镜头的可执行镜头表、逐镜头提示词、版本命名和审核清单见 [CG-SHOTLIST.md](CG-SHOTLIST.md)。该表同时区分 `pending_generation`、`draft_needs_art_review` 和 `approved`；计划条目不等于已生成或已接入。
+
 CG 由用户明确指定使用豆包 Seedance 2.5 生成。本次已查询到连接平台中的 `bytedance/seedance-2.5/image-to-video`（模型 ID `cbe8b347-8c85-4e1a-b379-f96f48932f43`），并提交了 S01 灰废墟→彩文明的 6 秒、720p、16:9 首尾帧报价请求。平台返回“Video models are only available on paid plans”，因此没有报价、没有生成任务，也没有扣费。完整输入与返回状态见 `CG-QUOTE.json`。目录显示的约 280 credits 是参考值，不是此次报价；不得冒充已授权的确切成本。
 
 以上为先前 Weave 路线的独立失败记录。随后已根据用户指定参考聊天找到另一套成功调用方法：`draw.openai-next.com` 的 `doubao-seedance-2-5-260628`，提交 `POST /v1/video/generations`，轮询 `GET /v1/tasks/{task_id}`。S01 纯文本恢复任务已完成并下载为 `server/media/cg_s01_reveal_720p_v1.mp4`，通过 ffprobe/ffmpeg 基础校验，但接触表显示建筑构图与 canonical S01 不同，当前 `draft_needs_art_review`；详见 CG-METHOD-REFERENCE.md、CG-GENERATION.md 与 CG-RESPONSE.json。该平台与 Weave 的套餐限制互相独立，不能把 Weave 的拒绝当作新路线状态。草稿尚未加入 approved manifest，也不等于微信播放或真机通过。

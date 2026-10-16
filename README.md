@@ -62,5 +62,5 @@ npm start
 
 ## 目录
 
-`data/` 章节与媒体映射；`systems/` 状态、存档、音频、资源；`ui/` Canvas UI；`platform/` 微信/浏览器适配；`assets/` 运行时压缩资源；`tests/` 自动测试；`server/` 可选媒体服务；`docs/` 场景配置、提示词、CG 记录、部署状态。
+`data/` 章节与媒体映射；`systems/` 状态、存档、音频、资源；`ui/` Canvas UI；`platform/` 微信/浏览器适配；`assets/` 运行时压缩资源；`tests/` 自动测试；`server/` 可选媒体服务；`docs/` 场景配置、提示词、CG 镜头表、生成记录、部署状态。
 
