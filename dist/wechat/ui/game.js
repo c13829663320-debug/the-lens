@@ -261,7 +261,7 @@ class Game {
     this.hits=[];
     if(m.type==='cg'){this.button('跳过 CG',this.W-160,8,140,()=>{if(this.closeVideo)this.closeVideo();this.modal=null;this.audio.environment(this.mode);},false,44);return;}
     if(m.type==='dialogue'){
-      rect(c,0,0,W,H,'#02060455');const y=this.portrait?H-300:Math.ceil(this.stage().y+this.stage().h+4),bottom=H-(this.portrait?20:8);rect(c,20,y,W-40,bottom-y,'#0c1512ff',C.line,4);const l=m.lines[m.index];
+      rect(c,0,0,W,H,'#02060455');const y=this.portrait?H-340:Math.ceil(this.stage().y+this.stage().h+4),bottom=H-(this.portrait?20:8);rect(c,20,y,W-40,bottom-y,'#0c1512ff',C.line,4);const l=m.lines[m.index];
       text(c,l.speaker||'观察',44,y+(this.portrait?32:23),this.portrait?17:15,C.accent);
       if(this.portrait)wrap(c,this.model.state.settings.subtitles?l.text:'叙事字幕已关闭',44,y+76,W-88,23,this.model.state.settings.subtitles?C.paper:C.muted,34,5);
       else wrap(c,this.model.state.settings.subtitles?l.text:'叙事字幕已关闭',44,y+46,W-330,18,this.model.state.settings.subtitles?C.paper:C.muted,22,3);

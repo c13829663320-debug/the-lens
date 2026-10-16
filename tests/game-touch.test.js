@@ -46,6 +46,31 @@ test('landscape dialogue stays below the scene and fully covers underlying HUD t
   assert.ok(game.hits.some(hit => hit.label === '继续  →'));
 });
 
+test('portrait dialogue covers the exploration controls behind its panel', () => {
+  const ctx = {
+    beginPath() {}, rect() {}, fill() {}, stroke() {}, fillText() {},
+    measureText(value) { return { width: String(value).length * 9 }; },
+  };
+  const game = Object.create(Game.prototype);
+  game.W = 600;
+  game.H = 1050;
+  game.portrait = true;
+  game.ctx = ctx;
+  game.hits = [];
+  game.modal = { type: 'dialogue', lines: [{ speaker: 'AI 广告', text: '一切交给 AI。' }], index: 0 };
+  game.model = { state: { settings: { subtitles: true } } };
+
+  const panels = [];
+  game.ctx.rect = (x, y, w, h) => panels.push({ x, y, w, h });
+  game.renderModal();
+
+  const card = panels.find(panel => panel.x === 20 && panel.w === 560);
+  assert.ok(card);
+  assert.ok(card.y >= game.stage().y + game.stage().h);
+  assert.ok(card.y <= 740);
+  assert.ok(game.hits.some(hit => hit.label === '继续  →'));
+});
+
 test('stage taps move the player before observing a distant object', () => {
   const game = Object.create(Game.prototype);
   game.player = { x: 0.1, y: 0.8, targetX: 0.1, targetY: 0.8 };
