@@ -56,3 +56,15 @@ test('letterboxed stage taps use the contained artwork frame for player coordina
   assert.equal(game.player.targetX, 0.5);
   assert.equal(game.player.targetY, 0.8);
 });
+
+test('completed-save epilogue restores saved audio settings', () => {
+  const game = Object.create(Game.prototype);
+  const settings = { audio: false, volume: 0.15, subtitles: true, vibration: false, lowMotion: true };
+  const applied = [];
+  game.model = { state: { completed: true, settings } };
+  game.assets = { load: () => Promise.resolve() };
+  game.audio = { apply: value => applied.push(value), environment: () => {} };
+  game.resume();
+  assert.deepEqual(applied, [settings]);
+  assert.equal(game.screen, 'epilogue');
+});

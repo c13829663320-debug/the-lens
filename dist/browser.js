@@ -114,7 +114,7 @@ class Game {
   puzzle(){this.modal={type:'puzzle',feedback:''};}
   attempt(id){const r=this.model.attempt(id,this.mode);if(r.ok){this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}else{this.modal.feedback=r.message;if(this.model.state.settings.vibration)this.p.vibrate();}}
   proceed(){const s=this.model.scene;this.dialogue(s.outro||[],()=>{if(!this.model.advance()){this.toast('先完成当前场景。');return;}this.save();if(this.model.state.completed)this.startEpilogue();else this.enter(true);});}
-  startEpilogue(){this.screen='epilogue';this.modal=null;this.mode='reality';this.epilogue=0;this.assets.load('assets/scenes/scene_S09_reality_1280_v1.jpg');this.audio.environment('reality');}
+  startEpilogue(){this.screen='epilogue';this.modal=null;this.mode='reality';this.epilogue=0;this.assets.load('assets/scenes/scene_S09_reality_1280_v1.jpg');this.audio.apply(this.model.state.settings);this.audio.environment('reality');}
   finish(){this.screen='ending';this.modal=null;this.endingTime=this.p.now();this.fade=0;this.audio.environment('ending');}
   frame(time){const dt=this.lastTime?Math.min((time-this.lastTime)/1000,.1):0;this.lastTime=time;
     this.lensTime+=dt;
