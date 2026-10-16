@@ -1,0 +1,26 @@
+services:
+  media:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      PORT: "8080"
+      MEDIA_ROOT: /app/media
+      ALLOWED_ORIGIN: "${ALLOWED_ORIGIN:-}"
+    volumes:
+      - ./media:/app/media:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 128m
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

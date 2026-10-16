@@ -1,0 +1,45 @@
+{
+  "request": "S01灰废墟->彩文明环境显影CG",
+  "date": "2026-10-17",
+  "status": "quote_unavailable",
+  "model": {
+    "label": "Seedance 2.5",
+    "id": "cbe8b347-8c85-4e1a-b379-f96f48932f43",
+    "model_type": "bytedance/seedance-2.5/image-to-video",
+    "approximate_catalog_cost_credits": 280
+  },
+  "quote": {
+    "cost_credits": null,
+    "currency": "Weave credits",
+    "returned_by_platform": false,
+    "reason": "This is a video model. Video models are only available on paid plans.",
+    "charged": false,
+    "acknowledgedCost_sent": false
+  },
+  "inputs": {
+    "image_url_asset": {
+      "id": "d768e596-46aa-44fa-983a-feb59a036d5a",
+      "type": "image",
+      "width": 1280,
+      "height": 723,
+      "role": "S01 monochrome abandoned exterior first frame"
+    },
+    "end_image_url_asset": {
+      "id": "6041cb0f-488b-4cac-bdb7-feecfb351913",
+      "type": "image",
+      "width": 1280,
+      "height": 723,
+      "role": "S01 colored civilization memory last frame"
+    },
+    "duration": "6",
+    "resolution": "720p",
+    "aspect_ratio": "16:9",
+    "codec": "H264",
+    "bitrate_mode": "standard",
+    "generate_audio": false,
+    "draft": false,
+    "us_hosted": false
+  },
+  "prompt": "A restrained cinematic environmental transition for THE LENS, no people and no new characters. Start on a silent low-saturation monochrome abandoned shopping mall exterior, cracked concrete, dust and rust, wide 16:9 fixed composition. Over six seconds, the handheld lens causes a slow, precise crossfade: faint colored traces of the intact civilization emerge through the same architecture, warm daylight and subtle distant activity returning only as memory. Preserve the composition, scale, and geometry of both supplied frames. The colored memory must remain ghostlike and incomplete, with a final quiet hold; no blue sci-fi overlay, no neon, no particles, no text, no logo, no UI, no camera travel, no invented objects. Filmic, contemplative, restrained pacing, soft environmental wind only.",
+  "next_step": "A user with an eligible paid plan must rerun the same quote request. Only after the platform returns a cost and the user explicitly approves that exact cost may acknowledgedCost be sent."
+}

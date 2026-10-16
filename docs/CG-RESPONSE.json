@@ -1,0 +1,119 @@
+{
+  "provider": "https://draw.openai-next.com",
+  "model": "doubao-seedance-2-5-260628",
+  "submission_count": 2,
+  "attempts": [
+    {
+      "provider": "https://draw.openai-next.com",
+      "model": "doubao-seedance-2-5-260628",
+      "submission_count": 1,
+      "task_id": "task_BMlK5mm9JVqqrjn94rw0QoXTq01W6oWP",
+      "submit_endpoint": "POST /v1/video/generations",
+      "poll_endpoint": "GET /v1/tasks/{task_id}",
+      "params": {
+        "duration": 8,
+        "resolution": "720p",
+        "ratio": "16:9",
+        "generate_audio": false,
+        "image_reference": "原S01商场外景黑白废墟，1280×723，使用平台请求示例确认的顶层image字段"
+      },
+      "submission": {
+        "http_status": 200,
+        "status": "queued",
+        "billing_detail": {
+          "aspect_ratio": "16:9",
+          "billing_group": "default",
+          "cost_per_unit": 1,
+          "cost_quota": 2000000,
+          "duration": 8,
+          "estimated_tokens": 0,
+          "generate_audio": false,
+          "group_ratio": 1,
+          "has_video_input": false,
+          "model": "doubao-seedance-2-5-260628",
+          "model_ratio": 35,
+          "price": 4,
+          "pricing_key_used": "doubao-seedance-2-5-260628",
+          "quota": 2000000,
+          "resolution": "720p",
+          "topup_convert_ratio": 1,
+          "user_discount": 1,
+          "user_group": "default"
+        }
+      },
+      "terminal_response": {
+        "http_status": 200,
+        "action": "image_to_video",
+        "created": 1792167893,
+        "finish_time": 1792167922,
+        "status": "failed",
+        "progress": "100%",
+        "task_type": "image_to_video",
+        "has_media": false,
+        "result_url": null,
+        "result": null,
+        "error_or_fail_reason_provided": false
+      },
+      "actual_billing_or_refund_confirmed": false,
+      "currency_unit_confirmed": false,
+      "output_file": null,
+      "validation": "No output video exists; ffprobe, frame inspection, and WeChat playback were not performed.",
+      "auth": "API token was temporarily held only in browser task globalThis; no credential value is stored here.",
+      "attempt": 1
+    },
+    {
+      "attempt": 2,
+      "task_id": "task_5ZmtlE4uw1pl4zv8oehX6gzdUlnZ68p9",
+      "action": "text_to_video",
+      "created": 1792168112,
+      "finish_time": 1792168405,
+      "http_status": 200,
+      "status": "completed",
+      "progress": "100%",
+      "duration_requested": 8,
+      "resolution_requested": "720p",
+      "ratio": "16:9",
+      "generate_audio": true,
+      "billing_detail_price": 4,
+      "cost_quota": 2000000,
+      "usage": {
+        "completion_tokens": 173700,
+        "total_tokens": 173700
+      },
+      "media_host": "ark-acg-cn-beijing.tos-cn-beijing.volces.com",
+      "signed_url_expires_after_seconds": 86400,
+      "signed_url_stored": false
+    }
+  ],
+  "price_fields_sum": 8,
+  "currency_unit_confirmed": false,
+  "failed_attempt_refund_confirmed": false,
+  "actual_final_settlement_confirmed": false,
+  "output_file": "server/media/cg_s01_reveal_720p_v1.mp4",
+  "qa_status": "draft_needs_art_review",
+  "qa_note": "No people or visible text in first/middle/last frames; fixed structure and grayscale-warm-gray color cycle. Building composition differs from original S01; do not use as canonical replacement.",
+  "measured": {
+    "bytes": 3993189,
+    "video_codec": "h264",
+    "pixel_format": "yuv420p",
+    "width": 1280,
+    "height": 720,
+    "frame_rate": 24,
+    "frames": 193,
+    "video_duration_seconds": 8.041667,
+    "container_duration_seconds": 8.064,
+    "audio_codec": "aac",
+    "audio_sample_rate": 32000,
+    "audio_channels": 2
+  },
+  "tests": [
+    "ffprobe streams/container",
+    "ffmpeg full decode without errors",
+    "human review first 0s, middle 4s, last 7.9s"
+  ],
+  "not_tested": [
+    "WeChat device playback",
+    "audio listening review",
+    "full-frame-by-frame art approval"
+  ]
+}

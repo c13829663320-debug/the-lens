@@ -1,0 +1,6 @@
+{
+  "description":"透镜 THE LENS · 最终剧本改编可玩版本",
+  "miniprogramRoot":"./dist/wechat/", "compileType":"game", "appid":"touristappid",
+  "projectname":"THE-LENS", "setting":{"es6":true,"minified":true,"urlCheck":true},
+  "libVersion":"3.7.12"
+}

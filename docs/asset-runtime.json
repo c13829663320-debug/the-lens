@@ -1,0 +1,62 @@
+{
+  "scenes": {
+    "S01": {
+      "memory": "assets/scenes/scene_S01_memory_1280_v1.jpg",
+      "reality": "assets/scenes/scene_S01_reality_1280_v1.jpg"
+    },
+    "S02": {
+      "memory": "assets/scenes/scene_S02_memory_1280_v1.jpg",
+      "reality": "assets/scenes/scene_S02_reality_1280_v1.jpg"
+    },
+    "S03": {
+      "memory": "assets/scenes/scene_S03_memory_1280_v1.jpg",
+      "reality": "assets/scenes/scene_S03_reality_1280_v1.jpg"
+    },
+    "S04": {
+      "memory": "assets/scenes/scene_S04_memory_1280_v1.jpg",
+      "reality": "assets/scenes/scene_S04_reality_1280_v1.jpg"
+    },
+    "S05": {
+      "memory": "assets/scenes/scene_S05_memory_1280_v1.jpg",
+      "reality": "assets/scenes/scene_S05_reality_1280_v1.jpg"
+    },
+    "S06": {
+      "memory": "assets/scenes/scene_S06_memory_1280_v1.jpg",
+      "color_ruins": "assets/scenes/scene_S06_color_ruins_1280_v1.jpg",
+      "reality": "assets/scenes/scene_S06_reality_1280_v1.jpg"
+    },
+    "S07": {
+      "reality": "assets/scenes/scene_S07_reality_1280_v1.jpg"
+    },
+    "S08": {
+      "reality": "assets/scenes/scene_S08_reality_1280_v1.jpg"
+    },
+    "S09": {
+      "reality": "assets/scenes/scene_S09_reality_1280_v1.jpg"
+    },
+    "S10": {
+      "sleeper": "assets/scenes/scene_S10_sleeper_1280_v1.jpg",
+      "elite": "assets/scenes/scene_S10_elite_1280_v1.jpg"
+    }
+  },
+  "audio": {
+    "ambient": "assets/audio/ambient_wind_8s_v1.wav",
+    "switch": "assets/audio/lens_switch_v1.wav",
+    "success": "assets/audio/puzzle_success_v1.wav"
+  },
+  "archives": {
+    "character_C01_color_480_v1": "assets/archive/character_C01_color_480_v1.jpg",
+    "character_C01_bw_480_v1": "assets/archive/character_C01_bw_480_v1.jpg",
+    "character_C02_color_480_v1": "assets/archive/character_C02_color_480_v1.jpg",
+    "character_C03_color_480_v1": "assets/archive/character_C03_color_480_v1.jpg",
+    "character_C04_color_480_v1": "assets/archive/character_C04_color_480_v1.jpg",
+    "character_C05_color_480_v1": "assets/archive/character_C05_color_480_v1.jpg",
+    "prop_P01_full_480_v1": "assets/archive/prop_P01_full_480_v1.jpg",
+    "prop_P01_half_480_v1": "assets/archive/prop_P01_half_480_v1.jpg",
+    "prop_P01_low_480_v1": "assets/archive/prop_P01_low_480_v1.jpg",
+    "prop_P01_off_480_v1": "assets/archive/prop_P01_off_480_v1.jpg",
+    "prop_P02_reference_480_v1": "assets/archive/prop_P02_reference_480_v1.jpg",
+    "prop_P03_reference_480_v1": "assets/archive/prop_P03_reference_480_v1.jpg",
+    "art_A01_prometheus_960_v1": "assets/archive/art_A01_prometheus_960_v1.jpg"
+  }
+}
