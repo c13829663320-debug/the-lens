@@ -21,3 +21,12 @@
 
 已完成的真实检查：`/health` 返回 200；`/api/media-manifest` 返回 1 个 MP4 draft；带 `Range: bytes=0-31` 的媒体请求返回 206，长度 32，`Content-Range` 与 3,993,189 字节文件一致。尚未配置 DNS A、TLS/HTTPS 或微信合法域名，因此不能称为微信线上可用。
 
+## 2026-10-17 公网复查
+
+本次从开发工作站重新探测，没有登录或改动 ECS：
+
+- `lens.xscxm.asia` 的本地解析以及指定 `1.1.1.1`、`8.8.8.8` 的 A 记录查询均返回 NXDOMAIN。
+- 绕过 DNS、将 `lens.xscxm.asia` 指向 `60.205.220.112` 的 HTTP 健康检查和媒体清单请求均返回阿里云备案拦截页（HTTP 403，`Server: Beaver`），不是媒体服务 JSON。
+- 同样指定目标 IP 的 HTTPS 443 无法连接；当前不能验证 TLS 或媒体 Range。
+- 因此本表上方的 ECS `/health`、manifest 和 Range 成功记录仅代表历史部署检查，当前公网媒体服务状态为不可确认/不可用。需要域名与 ECS 控制台负责人复核备案拦截、DNS、Nginx 监听和证书，再重新运行 HTTPS/Range 验证。
+
