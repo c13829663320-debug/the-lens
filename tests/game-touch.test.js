@@ -285,6 +285,32 @@ test('cave gate gives tactile feedback before recording the real obstruction', (
   assert.deepEqual(events.slice(-3), ['observe:bars', 'save', 'dialogue']);
 });
 
+test('cave gate cancellation discards the partial push and allows a clean retry', () => {
+  const game = Object.create(Game.prototype);
+  const bars = { id: 'bars', label: '封洞木栅', clue: { id: 'S08_bars' }, dialogue: [] };
+  game.model = {
+    scene: { id: 'S08' },
+    state: { clues: [] },
+    observe: () => ({ ok: true, dialogue: [] }),
+  };
+  game.modal = null;
+  game.drag = null;
+  game.toast = () => {};
+  game.save = () => {};
+  game.dialogue = () => {};
+
+  game.observe(bars);
+  game.pushGate();
+  assert.equal(game.modal.pushes, 1);
+  game.closeModal();
+  assert.equal(game.modal, null);
+
+  game.observe(bars);
+  assert.equal(game.modal.pushes, 0);
+  game.pushGate();
+  assert.equal(game.modal.pushes, 1);
+});
+
 test('S07 fire hotspot asks for a safe distance before recording the clue', () => {
   const game = Object.create(Game.prototype);
   const fire = { id: 'fire', label: '焚烧旧画的火', clue: { id: 'S07_fire', title: '火中的画' }, dialogue: [] };
