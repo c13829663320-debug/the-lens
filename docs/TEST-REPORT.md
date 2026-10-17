@@ -108,10 +108,10 @@
 
 后续横屏布局修复复验：`npm test` 62/62 通过，`npm run build` 清理式重建成功，`dist/wechat` runtimeBytes 为 4,039,860；浏览器 1280×720 与 844×390 横屏截图确认标题页保持横向构图。新增几何回归覆盖横屏对白正文/按钮、四选项谜题反馈/选项以及通知条/动作栏之间的间距。微信小游戏配置仍为 `deviceOrientation: landscape`，未改为小程序入口。
 
-- `npm test`：61/61 通过。
+- `npm test`：62/62 通过。
 - `npm run check`：退出码 0；10 个场景、16 个背景引用、路径缺失 0；仍报告 `missingRequiredMemoryLayers:["S08.memory"]`。
 - `npm --prefix server test`：2/2 通过；`git diff --check`：通过。
-- `npm run build`：清理式重建通过；`dist/wechat` 为 59 个文件、4,038,975 bytes，构建明确排除 `*_candidate` 审核图，未发现候选图残留。
+- `npm run build`：清理式重建通过；`dist/wechat` 为 59 个文件、4,039,860 bytes，构建明确排除 `*_candidate` 审核图，未发现候选图残留。
 - 浏览器审核服务 `http://127.0.0.1:8789/` 返回 200；六条 MP4 路径均返回 `200 video/mp4`。浏览器专用 CG 映射不改变微信生产 `clips`，后者仍为空。
 - 2026-10-17 对正式工程执行微信 CLI：`islogin` 返回 `{"login":true}`，`open` 返回 0；`preview` 实际进入 `compile_start` 后报告 `dist/wechat/app.json` 缺失。由于该工程是原生小游戏入口 `game.json`，CLI 返回码 0 不能视为预览编译通过；没有真机扫码或完整设备录屏证据。
 - 当前 `server/media/manifest.json` 的审核结论为：S01、S10、S02、S05、S09、片尾六条均 `rejected`、`canonical:false`；没有视频进入微信生产播放清单。
@@ -120,7 +120,7 @@
 
 - 将当前工作树复制到隔离目录 `work/current-cli-wx2d93fdfdf96aa297-r1`，只在副本使用用户确认的测试 AppID `wx2d93fdfdf96aa297`，未修改交付工程 `project.config.json`。
 - 微信 CLI `islogin` 返回 `{"login":true}`；`open` 返回 0；`preview` 识别 `Using AppID: wx2d93fdfdf96aa297` 并返回 0。
-- 当前构建预览包报告 `4,038,314 bytes`。该结果是开发者工具 CLI 编译/预览证据，不是微信真机、上传或远程 CG 播放证据。
+- 该隔离副本快照的预览包报告 `4,038,314 bytes`。这是开发者工具 CLI 编译/预览证据，不是本次清理式构建的包大小，也不是微信真机、上传或远程 CG 播放证据。
 
 ## 横屏小游戏配置复验（2026-10-17）
 
