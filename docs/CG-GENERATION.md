@@ -31,3 +31,24 @@
 | 片尾晨光 | `task_YrbvcShLb0LLqZHZLIVwIKLljOgp8DF5` | `cg_end_morning_t01_v01_720p.mp4` | 8.064s | 10,253,518 | `2e59575977733564659b88714762c32f0eeebbb2cec5ff61956d309f85254946` | `draft_needs_art_review` |
 
 本批次尚未进入`canonical`或微信端远程播放清单。抽帧检查发现模型对人物外观、空间细节和构图有自由发挥，下一步需按`CG-SHOTLIST.md`逐镜头确认；不合格镜头保留任务记录并重新生成新版本，不覆盖当前文件。
+
+## 资源核验补充（2026-10-17）
+
+当前 `server/media/` 的可验证视频清单如下。六条文件均已通过 `ffprobe` 轨道读取和 `ffmpeg -f null` 完整解码，manifest 的字节数与 SHA-256 均匹配；它们仍是草稿预览，不是正式接入：
+
+| 镜头 | 文件 | 容器时长 | bytes | SHA-256 前缀 | 状态 |
+|---|---|---:|---:|---|---|
+| S01 | `cg_s01_reveal_720p_v1.mp4` | 8.064s | 3,993,189 | `1eae4cc2…a871f` | `draft_needs_art_review` |
+| S10 | `cg_s10_montage_t01_v01_720p.mp4` | 10.080s | 9,251,079 | `28759b61…de3a1` | `draft_needs_art_review` |
+| S02 | `cg_s02_lens_reveal_t01_v01_720p.mp4` | 6.080s | 4,254,604 | `4eeae121…4ccdb` | `draft_needs_art_review` |
+| S05 | `cg_s05_missed_bridge_t01_v01_720p.mp4` | 8.064s | 8,041,506 | `c8661b57…06463` | `draft_needs_art_review` |
+| S09 | `cg_s09_drawing_stars_t01_v01_720p.mp4` | 8.064s | 5,900,957 | `675d1f44…7d45f9` | `draft_needs_art_review` |
+| 片尾 | `cg_end_morning_t01_v01_720p.mp4` | 8.064s | 10,253,518 | `2e595759…54946` | `draft_needs_art_review` |
+
+共同媒体规格为 1280×720、24fps、H.264/AAC；S01 的 manifest 时长 `8042ms` 对应视频轨约 8.0417s，而容器报告 8.064s，后续审核和转码时须保留该口径差异，不能据此宣称已通过微信播放。
+
+## S08 记忆底图候选
+
+`assets/scenes/scene_S08_memory_1280_v1.jpg` 已存在，1280×720、RGB/sRGB、288,072 bytes，SHA-256 为 `d3f07651508a673a31ae0325f592d3b3c4416d68d3cf9d53c9ecd21d11d7afef`，可正常解码。它与现实底图保持同一洞口、木栅和地平线构图，但 JPEG 注释为 `Lavc62.28.102`，属于处理/转码产物；当前没有模型、日期、原始提示词、参考图回传和授权范围证据。该文件只能作为 `draft_needs_art_review` 候选，不能写入 `docs/asset-runtime.json` 或 `data/chapter.js`，也不能进入视频 manifest。正式图生图回传并完成美术签字前，S08 `memory` 继续为 `null`。
+
+S03、S04、S06、S07 和 S08 视频没有可验证输出，保持 `pending_generation`；不创建占位视频，不把静态候选冒充成视频成片。
