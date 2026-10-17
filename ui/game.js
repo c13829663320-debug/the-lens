@@ -278,7 +278,7 @@ class Game {
     const solved=state.solved.includes(s.puzzle.id);this.button(solved?'继续  →':'采取行动  →',W-220,by,196,()=>solved?this.proceed():this.puzzle(),true,actionH);
     if(this.portrait)text(this.ctx,this.savedTime?'进度已保存到本机':'进度将在行动后保存',24,H-38,15,C.muted);
   }
-  panel(title,subtitle){const c=this.ctx;rect(c,0,0,this.W,this.H,'#030806df');const x=24,y=24,w=this.W-48,h=this.H-48;rect(c,x,y,w,h,'#101a17f8',C.line,5);text(c,title,x+28,y+36,28,C.paper,'left','serif');if(subtitle)text(c,subtitle,x+28,y+74,16,C.muted);this.button('返回',this.W-144,38,94,()=>this.closeModal(),false,42);this.line(50,122,this.W-100);}
+  panel(title,subtitle,closable=true){const c=this.ctx;rect(c,0,0,this.W,this.H,'#030806df');const x=24,y=24,w=this.W-48,h=this.H-48;rect(c,x,y,w,h,'#101a17f8',C.line,5);text(c,title,x+28,y+36,28,C.paper,'left','serif');if(subtitle)text(c,subtitle,x+28,y+74,16,C.muted);if(closable)this.button('返回',this.W-144,38,94,()=>this.closeModal(),false,42);this.line(50,122,this.W-100);}
   renderModal(){const m=this.modal,c=this.ctx,W=this.W,H=this.H;
     // Modal controls must fully replace exploration hit regions.
     this.hits=[];
@@ -352,7 +352,7 @@ class Game {
   renderGateInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel('试着推开木栅','透镜没有影像可切换。木栅是现实中的阻挡，推动只会留下手感反馈。');
     rect(c,70,220,W-140,180,'#222c27',C.line,4);text(c,'封洞木栅',W/2,290,24,C.paper,'center');text(c,m.pushes?'横木仍卡住了':'手掌抵住横木',W/2,335,18,m.pushes?C.accent:C.muted,'center');
     text(c,'两次推压确认阻力，随后回到洞内寻找出口线索。',54,H-128,18,C.muted);this.button('推一下',54,H-98,170,()=>this.pushGate());this.button('先停手',W-224,H-98,170,()=>this.closeModal());}
-  renderRescueInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel(m.phase==='grip'?'断桥 · 抓住小花':'断桥 · 配合救援','踩空和受伤已经发生。结果固定，错误动作只给反馈，可以重试。');
+  renderRescueInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel(m.phase==='grip'?'断桥 · 抓住小花':'断桥 · 配合救援','踩空和受伤已经发生。结果固定，错误动作只给反馈，可以重试。',false);
     if(m.phase==='grip'){wrap(c,'小花抓住你的手腕。收住挣扎，把重心交给她。',54,175,W-108,24,C.paper,38,4);this.button('乱动',54,H-120,170,()=>this.rescueAction('struggle'));this.button('抓住小花',W-250,H-120,196,()=>this.rescueAction('hold'),true);return;}
     wrap(c,'族长伏在完整桥面，伸手提供支点。不要松手，配合两人的拉拽。',54,175,W-108,24,C.paper,38,4);this.button('松手',54,H-120,170,()=>this.rescueAction('letgo'));this.button('配合族长',W-250,H-120,196,()=>this.rescueAction('cooperate'),true);}
   renderLeverInteraction(m){const c=this.ctx,W=this.W,H=this.H,l=this.leverLayout();this.panel('撬开现实中的路','透镜已经断电。先确认风尘方向，再把木枝拖到能借力的支点。');

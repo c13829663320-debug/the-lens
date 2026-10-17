@@ -355,6 +355,26 @@ test('bridge rescue keeps the fixed injury and only advances after both rescue a
   assert.ok(notices.some(message => /乱动/.test(message)));
 });
 
+test('bridge rescue cannot be dismissed before the fixed event completes', () => {
+  const game = Object.create(Game.prototype);
+  const labels = [];
+  game.W = 600;
+  game.H = 1050;
+  game.portrait = true;
+  game.modal = { type: 'rescue', phase: 'grip' };
+  game.ctx = {
+    beginPath() {}, rect() {}, fill() {}, stroke() {}, fillText() {},
+    measureText(value) { return { width: String(value).length * 9 }; },
+  };
+  game.button = (label) => labels.push(label);
+  game.line = () => {};
+
+  game.renderRescueInteraction(game.modal);
+
+  assert.equal(labels.includes('返回'), false);
+  assert.equal(labels.includes('抓住小花'), true);
+});
+
 test('bridge rescue resumes the saved action after interruption at either step', async () => {
   const adapter = storageAdapter();
   const initial = createS05Model().state;
