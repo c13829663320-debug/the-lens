@@ -10,7 +10,7 @@
 - 浏览器预览已在 390×844 视口从标题完整触控游玩至片尾，覆盖真实罐头拖取、断桥救援、洞穴绘画/观星/撬石，并验证刷新后恢复结尾。浏览器播放的 CG 和音频仍受自动播放策略影响。
 - S01、S10、S02、S05、S09 和片尾已有真实 Seedance 2.5 视频草稿，均已下载到 `server/media/` 并通过本机 ffprobe/ffmpeg 基础校验。当前审核结论为六条全部退回；没有任何视频达到 `approved + canonical:true`。浏览器审核映射仅在 `p.kind === 'browser'` 时启用，`data/media.js` 的生产 `baseUrl` 与 `clips` 仍为空。
 - 阿里云 ECS 当前部署独立 `the-lens.service`（Node 20，127.0.0.1:8790）；历史回环已验证源码、旧 manifest 与 MP4 的 health、清单、Range 和 hash。仓库当前六条退回 manifest 尚未有本轮 ECS 同步证据。历史公网 IP/Host 检查曾通过；最新复查中 `lens.xscxm.asia` 为 NXDOMAIN，HTTP 请求被备案拦截（403），443 不可连接，当前不能视作公网可用。
-- 微信开发者工具 2.02.2608070 已用用户确认的测试 AppID `wx2d93fdfdf96aa297` 在当前构建隔离副本中完成 `open` 与 `preview`，预览包报告 4,038,314 bytes；交付工程仍保留正式配置 `wxf9d2785d37c216d4`，两者没有混用。没有微信真机扫码通关证据。详见 [UNFINISHED.md](UNFINISHED.md)、[docs/TEST-REPORT.md](docs/TEST-REPORT.md) 与 [docs/WECHAT-CLI-VERIFICATION.md](docs/WECHAT-CLI-VERIFICATION.md)。
+- 微信开发者工具 2.02.2608070 已用用户确认的测试 AppID `wx2d93fdfdf96aa297` 在隔离副本快照中完成 `open` 与 `preview`，该快照预览包报告 4,038,314 bytes；交付工程仍保留正式配置 `wxf9d2785d37c216d4`，两者没有混用。没有微信真机扫码通关证据。详见 [UNFINISHED.md](UNFINISHED.md)、[docs/TEST-REPORT.md](docs/TEST-REPORT.md) 与 [docs/WECHAT-CLI-VERIFICATION.md](docs/WECHAT-CLI-VERIFICATION.md)。
 
 ## 构建运行时包
 
