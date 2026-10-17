@@ -32,7 +32,7 @@
 - 微信真机、低性能机和多品牌安全区尚未取得设备证据。
 - 当前新增的“靠近物件再观察”、横屏/竖屏真实触控热区、动态安全区和完整到达片尾的流程仍未在微信真机上人工验证；现有平台测试及浏览器截图不等同于设备证据。
 - `lens.xscxm.asia` DNS、HTTPS/TLS 与微信合法域名尚未配置。
-- Seedance S01 视频仍是待美术批准的 draft，未替换 canonical 场景，也未启用远程媒体请求。
+- Seedance S01 以及其余五条已存在视频均按审核单退回，全部 `canonical:false`，未替换场景或启用远程媒体请求。
 
 ## V5.0 核心玩法增量（2026-10-17 历史阶段记录）
 
@@ -103,3 +103,33 @@
 - `npm run check`：退出码 0；10 个场景、16 个背景引用缺失 0，仍报告 `missingRequiredMemoryLayers:["S08.memory"]`。
 - `npm run build`：在隔离副本执行成功，`runtimeBytes: 4,038,975`，第三方运行时依赖 0；共享 `dist/` 未被覆盖，以保留媒体窗口未提交改动。
 - `node --check ui/game.js tests/game-touch.test.js`：通过。微信开发者工具、真机安全区和正式 AppID 仍未验证。
+
+## 当前集成复验（2026-10-17）
+
+后续横屏布局修复复验：`npm test` 62/62 通过，`npm run build` 清理式重建成功，`dist/wechat` runtimeBytes 为 4,039,860；浏览器 1280×720 与 844×390 横屏截图确认标题页保持横向构图。新增几何回归覆盖横屏对白正文/按钮、四选项谜题反馈/选项以及通知条/动作栏之间的间距。微信小游戏配置仍为 `deviceOrientation: landscape`，未改为小程序入口。
+
+- `npm test`：61/61 通过。
+- `npm run check`：退出码 0；10 个场景、16 个背景引用、路径缺失 0；仍报告 `missingRequiredMemoryLayers:["S08.memory"]`。
+- `npm --prefix server test`：2/2 通过；`git diff --check`：通过。
+- `npm run build`：清理式重建通过；`dist/wechat` 为 59 个文件、4,038,975 bytes，构建明确排除 `*_candidate` 审核图，未发现候选图残留。
+- 浏览器审核服务 `http://127.0.0.1:8789/` 返回 200；六条 MP4 路径均返回 `200 video/mp4`。浏览器专用 CG 映射不改变微信生产 `clips`，后者仍为空。
+- 2026-10-17 对正式工程执行微信 CLI：`islogin` 返回 `{"login":true}`，`open` 返回 0；`preview` 实际进入 `compile_start` 后报告 `dist/wechat/app.json` 缺失。由于该工程是原生小游戏入口 `game.json`，CLI 返回码 0 不能视为预览编译通过；没有真机扫码或完整设备录屏证据。
+- 当前 `server/media/manifest.json` 的审核结论为：S01、S10、S02、S05、S09、片尾六条均 `rejected`、`canonical:false`；没有视频进入微信生产播放清单。
+
+## 正确测试 AppID 的开发者工具复验（2026-10-17）
+
+- 将当前工作树复制到隔离目录 `work/current-cli-wx2d93fdfdf96aa297-r1`，只在副本使用用户确认的测试 AppID `wx2d93fdfdf96aa297`，未修改交付工程 `project.config.json`。
+- 微信 CLI `islogin` 返回 `{"login":true}`；`open` 返回 0；`preview` 识别 `Using AppID: wx2d93fdfdf96aa297` 并返回 0。
+- 当前构建预览包报告 `4,038,314 bytes`。该结果是开发者工具 CLI 编译/预览证据，不是微信真机、上传或远程 CG 播放证据。
+
+## 横屏小游戏配置复验（2026-10-17）
+
+- `game.json` 与构建产物 `dist/wechat/game.json` 均为 `{"deviceOrientation":"landscape","showStatusBar":false}`。
+- `project.config.json` 的 `compileType` 为 `game`，入口为 `dist/wechat/game.js`；没有把工程改成小程序 `app.json`。
+- `platform/wechat.js` 按微信窗口尺寸和安全区计算横屏 Canvas；`ui/game.js` 的竖屏布局仅用于浏览器窄视口兼容，小游戏配置会要求横屏运行。
+
+## V5.0 隔离浏览器抽查（2026-10-17）
+
+- 使用隔离预览 `http://127.0.0.1:8791/`，通过测试存档进入 S03。先在影像模式打开行动面板选择“滑动透镜跳到成品”，操作被“影像无法代替行动”门槛拦截；切回现实后再次选择，成功写入 `S03_art: skip` 并显示“行动完成”。
+- 使用测试存档进入 S05 并保留 `S05_bridge`。触发断桥后，第一阶段面板仅显示“乱动 / 抓住小花”，错误操作保留面板并提示伤势；完成抓住小花后第二阶段仅显示“松手 / 配合族长”，错误操作保留面板并提示不要松手；完成配合后记录 `S05_rescue` 并进入对白。
+- 本轮为浏览器预览人工触控证据，未覆盖微信开发者工具、微信真机、安全区差异、低性能机或线上媒体播放。

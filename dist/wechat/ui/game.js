@@ -47,7 +47,17 @@ class Game {
   resumeFromBackground(){this.hidden=false;this.lastTime=0;if(this.screen==='explore'&&!this.modal&&!this.settingsPaused)this.audio.environment(this.audioMode());}
   openSettings(){this.settingsPaused=this.screen==='explore';if(this.settingsPaused)this.audio.pause();this.modal={type:'settings'};}
   closeModal(){const shouldResume=this.settingsPaused&&this.screen==='explore'&&!this.hidden;this.modal=null;this.drag=null;if(shouldResume)this.audio.environment(this.audioMode());if(this.settingsPaused)this.settingsPaused=false;}
-  optionalCG(sceneId){const id=(MEDIA.sceneClips||{})[sceneId],clip=MEDIA.clips[sceneId]||this.remoteClips[id];if(!clip||!clip.url)return;this.modal={type:'cg'};this.audio.pause();const settings=this.model.state.settings;this.closeVideo=this.p.video(clip.url,()=>{this.modal=null;this.audio.environment(this.mode);},()=>{this.modal=null;this.toast('CG加载失败，已恢复场景。');this.audio.environment(this.mode);},()=>{}, {muted:!settings.audio,volume:settings.volume,topInset:this.oy+60*this.scale});}
+  optionalCG(sceneId,done){
+    const id=(MEDIA.sceneClips||{})[sceneId];
+    // Draft media is deliberately available only to the browser review build.
+    // WeChat keeps using the approved/canonical remote manifest path below.
+    const preview=this.p&&this.p.kind==='browser'&&MEDIA.previewClips?MEDIA.previewClips[sceneId]:null;
+    const clip=preview||(MEDIA.clips||{})[sceneId]||(this.remoteClips||{})[id];
+    if(!clip||!clip.url){if(done)done();return;}
+    this.modal={type:'cg'};this.audio.pause();const settings=this.model.state.settings;let settled=false;
+    const settle=(failed)=>{if(settled)return;settled=true;this.modal=null;if(failed)this.toast('CG加载失败，已恢复场景。');this.audio.environment(this.mode);if(done)done();};
+    this.closeVideo=this.p.video(clip.url,()=>settle(false),()=>settle(true),()=>{}, {muted:!settings.audio,volume:settings.volume,topInset:this.oy+60*this.scale});
+  }
   dialogue(lines,done){if(!lines||!lines.length){if(done)done();return;}this.modal={type:'dialogue',lines,index:0,done};}
   nextDialogue(){const m=this.modal;if(++m.index>=m.lines.length){this.modal=null;if(m.done)m.done();}}
   observe(object){
@@ -94,7 +104,7 @@ class Game {
     const r=this.model.attempt(id,this.mode);if(r.ok){this.audio.cue('success');this.save();this.modal={type:'success',message:r.message};}else{this.modal.feedback=r.message;if(this.model.state.settings.vibration)this.p.vibrate();}
   }
   proceed(){const s=this.model.scene;const choice=this.model.state.choices.S03_art;const outro=s.id==='S03'&&choice==='process'?[{speaker:'动作',text:'阿迟停在画前，看完画师试探、覆盖又重新落笔。'},{speaker:'动作',text:'脚步声穿过画廊。'}]:(s.outro||[]);this.dialogue(outro,()=>{if(!this.model.advance()){this.toast('先完成当前场景。');return;}this.save();if(this.model.state.completed)this.startEpilogue();else this.enter(true);});}
-  startEpilogue(){this.screen='epilogue';this.modal=null;this.mode='reality';this.epilogue=0;this.epilogueObserved={};this.settingsPaused=false;this.assets.load('assets/scenes/scene_S09_reality_1280_v1.jpg');this.audio.apply(this.model.state.settings);this.audio.environment('reality');}
+  startEpilogue(){this.screen='epilogue';this.modal=null;this.mode='reality';this.epilogue=0;this.epilogueObserved={};this.settingsPaused=false;this.assets.load('assets/scenes/scene_S09_reality_1280_v1.jpg');this.audio.apply(this.model.state.settings);this.audio.environment('reality');this.optionalCG('END');}
   finish(){this.screen='ending';this.modal=null;this.endingTime=this.p.now();this.fade=0;this.audio.environment('ending');}
   frame(time){const dt=this.lastTime?Math.min((time-this.lastTime)/1000,.1):0;this.lastTime=time;
     this.lensTime+=dt;
@@ -205,7 +215,7 @@ class Game {
     if(this.screen==='title')this.renderTitle();else if(this.screen==='explore')this.renderExplore();else if(this.screen==='epilogue')this.renderEpilogue();else this.renderEnding();
     if(this.modal)this.renderModal();
     if(this.fade>0){c.fillStyle=`rgba(4,8,6,${this.fade})`;c.fillRect(0,0,this.W,this.H);}
-    this.notices=this.notices.filter(n=>n.until>this.p.now());if(this.notices.length&&this.screen!=='ending'){const n=this.notices[this.notices.length-1];rect(c,24,this.H-105,this.W-48,48,'#0a1410f5',C.line,4);wrap(c,n.text,40,this.H-81,this.W-80,17,C.paper,22,2);}
+    this.notices=this.notices.filter(n=>n.until>this.p.now());if(this.notices.length&&this.screen!=='ending'){const n=this.notices[this.notices.length-1],layout=this.noticeLayout();rect(c,layout.x,layout.y,layout.w,layout.h,'#0a1410f5',C.line,4);wrap(c,n.text,layout.x+16,layout.y+24,layout.w-32,17,C.paper,22,2);}
   }
   renderTitle(){const c=this.ctx,W=this.W,H=this.H;cover(c,this.assets.get(this.titlePath),0,0,W,H);
     const g=c.createLinearGradient(0,0,W,0);g.addColorStop(0,'#07100df5');g.addColorStop(.6,'#07100d9a');g.addColorStop(1,'#07100d35');c.fillStyle=g;c.fillRect(0,0,W,H);
@@ -278,18 +288,20 @@ class Game {
     const solved=state.solved.includes(s.puzzle.id);this.button(solved?'继续  →':'采取行动  →',W-220,by,196,()=>solved?this.proceed():this.puzzle(),true,actionH);
     if(this.portrait)text(this.ctx,this.savedTime?'进度已保存到本机':'进度将在行动后保存',24,H-38,15,C.muted);
   }
-  panel(title,subtitle){const c=this.ctx;rect(c,0,0,this.W,this.H,'#030806df');const x=24,y=24,w=this.W-48,h=this.H-48;rect(c,x,y,w,h,'#101a17f8',C.line,5);text(c,title,x+28,y+36,28,C.paper,'left','serif');if(subtitle)text(c,subtitle,x+28,y+74,16,C.muted);this.button('返回',this.W-144,38,94,()=>this.closeModal(),false,42);this.line(50,122,this.W-100);}
+  noticeLayout(){const actionTop=this.portrait?Math.min(860,this.H-190):this.H-44-16;return{x:24,y:this.portrait?this.H-105:Math.max(24,actionTop-56),w:this.W-48,h:48};}
+  dialogueLayout(){const y=this.portrait?this.H-340:Math.ceil(this.stage().y+this.stage().h+4),bottom=this.H-(this.portrait?20:8);if(this.portrait)return{panel:{x:20,y,w:this.W-40,h:bottom-y},text:{x:44,y:y+76,w:this.W-88,line:34,size:23,maxLines:5},button:{x:this.W-192,y:this.H-88,w:146,h:48}};return{panel:{x:20,y,w:this.W-40,h:bottom-y},text:{x:44,y:y+46,w:this.W-360,line:22,size:18,maxLines:3},button:{x:this.W-192,y:this.H-62,w:146,h:48}};}
+  puzzleLayout(optionCount){const y=this.portrait?340:266,gap=this.portrait?100:66,last=Math.max(0,optionCount-1);return{y,gap,feedbackY:this.portrait?730:y+last*gap+60,feedbackMaxLines:this.portrait?3:2};}
+  panel(title,subtitle,closable=true){const c=this.ctx;rect(c,0,0,this.W,this.H,'#030806df');const x=24,y=24,w=this.W-48,h=this.H-48;rect(c,x,y,w,h,'#101a17f8',C.line,5);text(c,title,x+28,y+36,28,C.paper,'left','serif');if(subtitle)text(c,subtitle,x+28,y+74,16,C.muted);if(closable)this.button('返回',this.W-144,38,94,()=>this.closeModal(),false,42);this.line(50,122,this.W-100);}
   renderModal(){const m=this.modal,c=this.ctx,W=this.W,H=this.H;
     // Modal controls must fully replace exploration hit regions.
     this.hits=[];
     if(m.type==='cg'){this.button('跳过 CG',this.W-160,8,140,()=>{if(this.closeVideo)this.closeVideo();this.modal=null;this.audio.environment(this.mode);},false,44);return;}
     if(m.type==='dialogue'){
-      rect(c,0,0,W,H,'#02060455');const y=this.portrait?H-340:Math.ceil(this.stage().y+this.stage().h+4),bottom=H-(this.portrait?20:8);rect(c,20,y,W-40,bottom-y,'#0c1512ff',C.line,4);const l=m.lines[m.index];
+      rect(c,0,0,W,H,'#02060455');const layout=this.dialogueLayout(),y=layout.panel.y;rect(c,layout.panel.x,layout.panel.y,layout.panel.w,layout.panel.h,'#0c1512ff',C.line,4);const l=m.lines[m.index];
       text(c,l.speaker||'观察',44,y+(this.portrait?32:23),this.portrait?17:15,C.accent);
-      if(this.portrait)wrap(c,this.model.state.settings.subtitles?l.text:'叙事字幕已关闭',44,y+76,W-88,23,this.model.state.settings.subtitles?C.paper:C.muted,34,5);
-      else wrap(c,this.model.state.settings.subtitles?l.text:'叙事字幕已关闭',44,y+46,W-330,18,this.model.state.settings.subtitles?C.paper:C.muted,22,3);
-      if(this.portrait){text(c,`${m.index+1} / ${m.lines.length}`,44,H-56,16,C.muted);this.button(m.index===m.lines.length-1?'继续  →':'下一页  →',W-192,H-88,146,()=>this.nextDialogue(),true);}
-      else{ text(c,`${m.index+1} / ${m.lines.length}`,W-216,H-32,14,C.muted,'right');this.button(m.index===m.lines.length-1?'继续  →':'下一页  →',W-192,H-62,146,()=>this.nextDialogue(),true); }
+      wrap(c,this.model.state.settings.subtitles?l.text:'叙事字幕已关闭',layout.text.x,layout.text.y,layout.text.w,layout.text.size,this.model.state.settings.subtitles?C.paper:C.muted,layout.text.line,layout.text.maxLines);
+      if(this.portrait){text(c,`${m.index+1} / ${m.lines.length}`,44,H-56,16,C.muted);this.button(m.index===m.lines.length-1?'继续  →':'下一页  →',layout.button.x,layout.button.y,layout.button.w,()=>this.nextDialogue(),true,layout.button.h);}
+      else{ text(c,`${m.index+1} / ${m.lines.length}`,W-216,H-32,14,C.muted,'right');this.button(m.index===m.lines.length-1?'继续  →':'下一页  →',layout.button.x,layout.button.y,layout.button.w,()=>this.nextDialogue(),true,layout.button.h); }
       return;
     }
     if(m.type==='can'){this.renderCanInteraction(m);return;}
@@ -331,8 +343,8 @@ class Game {
     }
     if(m.type==='puzzle'){
       const p=this.model.scene.puzzle;this.panel(p.title,'行动发生在现实。线索不足时，可以返回继续观察。');wrap(c,p.prompt,54,157,W-108,22,C.paper,33,3);
-      const yy=this.portrait?340:266,gap=this.portrait?100:66;p.options.forEach((o,i)=>this.button(o.label,54,yy+i*gap,W-108,()=>this.attempt(o.id),false,52));
-      if(m.feedback)wrap(c,m.feedback,54,this.portrait?730:485,W-108,20,C.accent,30,3);return;
+      const layout=this.puzzleLayout(p.options.length);p.options.forEach((o,i)=>this.button(o.label,54,layout.y+i*layout.gap,W-108,()=>this.attempt(o.id),false,52));
+      if(m.feedback)wrap(c,m.feedback,54,layout.feedbackY,W-108,20,C.accent,30,layout.feedbackMaxLines);return;
     }
     if(m.type==='success'){
       this.panel('行动完成');wrap(c,m.message,54,180,W-108,25,C.paper,42,8);this.button('继续旅程  →',W-276,H-108,222,()=>this.proceed(),true);return;
@@ -352,7 +364,7 @@ class Game {
   renderGateInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel('试着推开木栅','透镜没有影像可切换。木栅是现实中的阻挡，推动只会留下手感反馈。');
     rect(c,70,220,W-140,180,'#222c27',C.line,4);text(c,'封洞木栅',W/2,290,24,C.paper,'center');text(c,m.pushes?'横木仍卡住了':'手掌抵住横木',W/2,335,18,m.pushes?C.accent:C.muted,'center');
     text(c,'两次推压确认阻力，随后回到洞内寻找出口线索。',54,H-128,18,C.muted);this.button('推一下',54,H-98,170,()=>this.pushGate());this.button('先停手',W-224,H-98,170,()=>this.closeModal());}
-  renderRescueInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel(m.phase==='grip'?'断桥 · 抓住小花':'断桥 · 配合救援','踩空和受伤已经发生。结果固定，错误动作只给反馈，可以重试。');
+  renderRescueInteraction(m){const c=this.ctx,W=this.W,H=this.H;this.panel(m.phase==='grip'?'断桥 · 抓住小花':'断桥 · 配合救援','踩空和受伤已经发生。结果固定，错误动作只给反馈，可以重试。',false);
     if(m.phase==='grip'){wrap(c,'小花抓住你的手腕。收住挣扎，把重心交给她。',54,175,W-108,24,C.paper,38,4);this.button('乱动',54,H-120,170,()=>this.rescueAction('struggle'));this.button('抓住小花',W-250,H-120,196,()=>this.rescueAction('hold'),true);return;}
     wrap(c,'族长伏在完整桥面，伸手提供支点。不要松手，配合两人的拉拽。',54,175,W-108,24,C.paper,38,4);this.button('松手',54,H-120,170,()=>this.rescueAction('letgo'));this.button('配合族长',W-250,H-120,196,()=>this.rescueAction('cooperate'),true);}
   renderLeverInteraction(m){const c=this.ctx,W=this.W,H=this.H,l=this.leverLayout();this.panel('撬开现实中的路','透镜已经断电。先确认风尘方向，再把木枝拖到能借力的支点。');

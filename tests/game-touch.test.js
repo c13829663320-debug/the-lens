@@ -109,6 +109,26 @@ test('portrait dialogue covers the exploration controls behind its panel', () =>
   assert.ok(game.hits.some(hit => hit.label === '继续  →'));
 });
 
+test('landscape modal layout separates dialogue, puzzle feedback and notices', () => {
+  const game = Object.create(Game.prototype);
+  game.W = 1000;
+  game.H = 600;
+  game.portrait = false;
+  game.stage = () => ({ x: 128, y: 76, w: 744, h: 390 });
+
+  const dialogue = game.dialogueLayout();
+  assert.ok(dialogue.text.x + dialogue.text.w < dialogue.button.x, 'dialogue copy must stay left of the action button');
+  assert.ok(dialogue.panel.y + dialogue.panel.h <= game.H, 'dialogue card must stay inside the canvas');
+
+  const puzzle = game.puzzleLayout(4);
+  const lastOptionBottom = puzzle.y + 3 * puzzle.gap + 52;
+  assert.ok(lastOptionBottom < puzzle.feedbackY, 'puzzle feedback must start below the last option');
+
+  const notice = game.noticeLayout();
+  const actionTop = game.H - 44 - 16;
+  assert.ok(notice.y + notice.h <= actionTop - 8, 'notice must leave a gap above the landscape action row');
+});
+
 test('stage taps move the player before observing a distant object', () => {
   const game = Object.create(Game.prototype);
   game.player = { x: 0.1, y: 0.8, targetX: 0.1, targetY: 0.8 };

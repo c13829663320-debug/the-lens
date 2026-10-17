@@ -90,7 +90,7 @@
   "failed_attempt_refund_confirmed": false,
   "actual_final_settlement_confirmed": false,
   "output_file": "server/media/cg_s01_reveal_720p_v1.mp4",
-  "qa_status": "draft_needs_art_review",
+  "qa_status": "rejected",
   "qa_note": "No people or visible text in first/middle/last frames; fixed structure and grayscale-warm-gray color cycle. Building composition differs from original S01; do not use as canonical replacement.",
   "measured": {
     "bytes": 3993189,

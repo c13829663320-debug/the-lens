@@ -15,7 +15,7 @@
 | HTTPS 证书与备案 | ECS 443 不可连接；HTTP Host 请求当前返回阿里云备案拦截页 403 |
 | Docker/Node/Nginx | ECS Node 20.20.2 + systemd `the-lens.service`（127.0.0.1:8790）、Nginx 1.24.0；当前未使用 Docker |
 | 后端源文件 | 当前 `server/server.mjs` 已部署到 ECS，SHA-256 `f03dc83a825051bb554ad5c1e435edcb967d90480c3e60bd755a357c02112253`；本地 Node 测试 2/2 通过 |
-| 媒体文件/manifest 上线 | S01 draft 媒体与带 status/canonical/hash/尺寸/时长的 manifest 已在 `/opt/the-lens/server/media`；服务只登记待审 draft |
+| 媒体文件/manifest 上线 | ECS 已有六条真实 MP4；最近一次有证据的回环清单仍为 S01 draft。仓库当前 manifest 已更新为六条 `rejected`，尚未有本轮重新部署证据，客户端生产清单保持为空 |
 | 微信合法域名与 AppID | 待确认 |
 | 云存档 | 不在当前版本范围；客户端真实本地存档 |
 
@@ -30,12 +30,12 @@
 - 同样指定目标 IP 的 HTTPS 443 无法连接；当前不能验证 TLS 或媒体 Range。
 - 因此本表上方的 ECS `/health`、manifest 和 Range 成功记录仅代表历史部署检查，当前公网媒体服务状态为不可确认/不可用。需要域名与 ECS 控制台负责人复核备案拦截、DNS、Nginx 监听和证书，再重新运行 HTTPS/Range 验证。
 
-## 2026-10-17 ECS 源码与清单更新
+## 2026-10-17 ECS 源码与清单更新（历史部署记录）
 
 随后使用部署专用密钥，并通过隔离 `work/keys/known_hosts` 严格校验 ECS 主机指纹。更新前备份旧源码和 manifest 至 `/opt/the-lens/backups/20261017-current-contract/`，保留现有 MP4 与 Nginx 配置。
 
 - 将当前 `server/server.mjs` 与 `server/media/manifest.json` 部署到 `/opt/the-lens/server/`；远端 SHA-256 分别为 `f03dc83a825051bb554ad5c1e435edcb967d90480c3e60bd755a357c02112253` 和 `bf1f0a350bee27f1bb7b11046b9d535e7f07df7203d37ddfe9103fbefa7517b0`。
-- 重启后 `the-lens.service` 为 `active`；回环 `/health` 返回 200，manifest 返回 S01 `draft_needs_art_review`、`canonical:false` 及 hash/媒体元数据。
+- 重启后 `the-lens.service` 为 `active`；回环 `/health` 返回 200，远端 manifest 返回 S01 `draft_needs_art_review`、`canonical:false` 及媒体元数据。
 - 回环媒体请求 `Range: bytes=0-31` 返回 206、32 字节；远端 MP4 SHA-256 与本地一致：`1eae4cc2bb473c8214ecfb9378a0fb449318899134a3ea5f60df390c11ea871f`。
 - 这验证了 ECS 本机服务和部署内容；DNS NXDOMAIN、HTTP 备案拦截及 443 不通仍阻止公网/微信端访问。
 
@@ -44,8 +44,8 @@
 使用现有部署密钥及隔离 `work/keys/known_hosts` 执行 SSH 只读检查，没有修改或重启服务：
 
 - `systemctl is-active the-lens.service` 返回 `active`；回环 `/health` 返回 `{"ok":true,"service":"the-lens-media","version":1}`。
-- 回环 `/api/media-manifest` 返回 S01 `draft_needs_art_review`、`canonical:false`；尺寸、时长、字节数及 SHA-256 均与本地 manifest 一致。
+- 回环 `/api/media-manifest` 返回历史部署中的 S01 draft 条目；本地当前 manifest 已改为六条 `rejected`，其尺寸、时长、字节数及 SHA-256 已在本地核对，需重新部署后才能声称 ECS 清单同步。
 - 回环 MP4 `Range: bytes=0-31` 返回 `206 Partial Content`、32 bytes，`Content-Range: bytes 0-31/3993189`。
-- 本地与远端 `server.mjs`、manifest、MP4 的 SHA-256 均一致，分别为 `f03dc83a825051bb554ad5c1e435edcb967d90480c3e60bd755a357c02112253`、`bf1f0a350bee27f1bb7b11046b9d535e7f07df7203d37ddfe9103fbefa7517b0`、`1eae4cc2bb473c8214ecfb9378a0fb449318899134a3ea5f60df390c11ea871f`。
-- 同日公网检查中，本地 DNS 未解析出 `lens.xscxm.asia` 地址，TCP 443 连接失败。ECS 回环状态正常不代表公网或微信端可访问；S01 仍是待审草稿，没有启用客户端远程播放。
+- 本地与远端 `server.mjs` 的 SHA-256 一致（`f03dc83a825051bb554ad5c1e435edcb967d90480c3e60bd755a357c02112253`）；历史远端 manifest SHA-256 为 `bf1f0a350bee27f1bb7b11046b9d535e7f07df7203d37ddfe9103fbefa7517b0`，本地当前 manifest SHA-256 为 `ddc321af3df56c0c3864af4019f31faa6554d2098f0937a88f9ab4de5e414cc1`，两者状态不同。MP4 SHA-256 仍为 `1eae4cc2bb473c8214ecfb9378a0fb449318899134a3ea5f60df390c11ea871f`。
+- 同日公网检查中，本地 DNS 未解析出 `lens.xscxm.asia` 地址，TCP 443 连接失败。ECS 回环状态正常不代表公网或微信端可访问；当前没有任何视频达到 `approved + canonical:true`，没有启用客户端远程播放。
 

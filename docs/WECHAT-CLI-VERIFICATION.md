@@ -59,3 +59,38 @@ D:\微信web开发者工具\wechatidecli.cmd preview --project <work\wechat-cli-
 
 此结果证明当前构建可被该版本开发者工具打开并编译预览，不证明手机扫码、生产 AppID、合法域名、真机全流程或远程 CG 播放通过。
 
+## 2026-10-17 正式工程复验（当前证据）
+
+当前源工程的 `project.config.json` 使用正式 AppID `wxf9d2785d37c216d4`、`compileType: "game"` 和 `miniprogramRoot: "./dist/wechat/"`。执行：
+
+```powershell
+D:\微信web开发者工具\wechatidecli.cmd islogin --port 41915
+D:\微信web开发者工具\wechatidecli.cmd open --project <outputs\the-lens> --port 41915
+D:\微信web开发者工具\wechatidecli.cmd preview --project <outputs\the-lens> --port 41915 --qr-format image --qr-output <work\wechat-formal-preview\preview-qr.png> --info-output <work\wechat-formal-preview\preview-info.json>
+```
+
+实际结果：`islogin` 返回 `{"login":true}`，`open` 返回 0。`preview` 已解析正式 AppID 并进入 `compile_start`，随后报告 `dist/wechat/app.json` 缺失；该工程是原生小游戏，入口文件是 `game.json` / `game.js`。CLI 进程仍返回 0，但编译错误使本次结果只能记为“打开成功、预览编译未通过”，不能写成二维码可用或真机通过。
+
+当前构建已验证 `dist/wechat` 内有 `game.json` 和 `game.js`，未加入小程序 `app.json` 兼容文件，以免把原生小游戏工程伪装成小程序。需要在微信开发者工具界面继续确认该版本对小游戏项目的编译入口，或使用支持小游戏的工具链；当前没有真机扫码、触控全流程、音频和视频播放证据。
+
+## 2026-10-17 正确测试 AppID 复验
+
+用户确认用于本机开发者工具测试的 AppID 为 `wx2d93fdfdf96aa297`。为避免覆盖交付工程配置，将当前工作树完整复制到隔离目录 `work/current-cli-wx2d93fdfdf96aa297-r1`，只在该副本中设置：
+
+- `appid: wx2d93fdfdf96aa297`
+- `miniprogramRoot: ./dist/wechat/`
+- `compileType: game`
+- `setting.urlCheck: false`（仅本机测试）
+
+执行结果：
+
+```text
+islogin: {"login":true}
+open: exit 0
+preview: exit 0
+Using AppID: wx2d93fdfdf96aa297
+preview package: 4,038,314 bytes
+```
+
+二维码和报告写入 `work/current-cli-wx2d93fdfdf96aa297-r1-output/`，没有写入交付工程。该结果证明当前构建可以被已登录的开发者工具以该测试 AppID 打开并完成 CLI 预览编译；不证明微信真机、正式上传、动态安全区、音频或远程 CG 已通过。交付工程 `project.config.json` 仍保留正式配置 `wxf9d2785d37c216d4`，不会把测试 AppID 混入最终包。
+

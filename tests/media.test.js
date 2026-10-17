@@ -5,6 +5,12 @@ const assert = require('node:assert/strict');
 const MEDIA = require('../data/media');
 const { Game } = require('../ui/game');
 
+test('browser review mapping exposes every generated draft clip without changing production clips', () => {
+  assert.deepEqual(Object.keys(MEDIA.previewClips).sort(), ['END', 'S01', 'S02', 'S05', 'S09', 'S10']);
+  assert.equal(MEDIA.clips && Object.keys(MEDIA.clips).length, 0);
+  for (const clip of Object.values(MEDIA.previewClips)) assert.match(clip.url, /^\/server\/media\/.+\.mp4$/);
+});
+
 test('remote CG accepts only approved canonical manifest entries', async () => {
   const previous = { baseUrl: MEDIA.baseUrl, manifestPath: MEDIA.manifestPath };
   MEDIA.baseUrl = 'https://media.test';

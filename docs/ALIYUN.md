@@ -1,6 +1,6 @@
 # 阿里云 ECS 部署说明（可选媒体服务）
 
-当前仓库提供 `server/` 的 Node.js 标准库服务。它只做健康检查、读取本地 CG manifest、只读媒体 Range；微信小游戏的剧情存档仍在客户端本地。ECS `60.205.220.112` 已安装 Node 20，并由独立 `the-lens.service` 监听 `127.0.0.1:8790`，Nginx 使用 `lens.xscxm.asia` 代理；既有 Nginx/Wuhan 配置未覆盖。当前 ECS 源码和审核 manifest 已更新，回环健康、manifest 与 Range 验证通过；公网 DNS/备案/TLS 仍不可用。实时状态见 DEPLOY-STATUS.md。
+当前仓库提供 `server/` 的 Node.js 标准库服务。它只做健康检查、读取本地 CG manifest、只读媒体 Range；微信小游戏的剧情存档仍在客户端本地。ECS `60.205.220.112` 已安装 Node 20，并由独立 `the-lens.service` 监听 `127.0.0.1:8790`，Nginx 使用 `lens.xscxm.asia` 代理；既有 Nginx/Wuhan 配置未覆盖。ECS 回环健康、历史 manifest 与 Range 验证通过；仓库当前审核 manifest 已更新，但新的六条退回状态尚未有本轮 ECS 同步证据。公网 DNS/备案/TLS 仍不可用。实时状态见 DEPLOY-STATUS.md。
 
 ## 准备
 

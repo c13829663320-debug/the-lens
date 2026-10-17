@@ -6,11 +6,11 @@
 
 ## 当前真实状态
 
-- 本地项目测试：`npm test` 通过 55/55；`server/` 测试通过 2/2；`npm run check` 检查 10 个场景、16 个实际背景引用、路径缺失 0，同时明确报告必需但尚未提供的 `S08.memory`。微信构建成功，运行时 3,747,115 bytes，第三方运行时依赖 0。
+- 当前工作树验证：`npm test` 通过 62/62；`server/` 测试通过 2/2；`npm run check` 检查 10 个场景、16 个实际背景引用、路径缺失 0，同时明确报告必需但尚未提供的 `S08.memory`。清理式微信构建成功，运行时 4,039,860 bytes、59 个文件，第三方运行时依赖 0；构建会排除带 `_candidate` 后缀的审核候选图。横屏 UI 已增加对白、谜题反馈和通知条的隔离布局，避免文字覆盖底部操作区。
 - 浏览器预览已在 390×844 视口从标题完整触控游玩至片尾，覆盖真实罐头拖取、断桥救援、洞穴绘画/观星/撬石，并验证刷新后恢复结尾。浏览器播放的 CG 和音频仍受自动播放策略影响。
 - S01、S10、S02、S05、S09 和片尾已有真实 Seedance 2.5 视频草稿，均已下载到 `server/media/` 并通过本机 ffprobe/ffmpeg 基础校验。当前审核结论为六条全部退回；没有任何视频达到 `approved + canonical:true`。浏览器审核映射仅在 `p.kind === 'browser'` 时启用，`data/media.js` 的生产 `baseUrl` 与 `clips` 仍为空。
-- 阿里云 ECS 当前部署独立 `the-lens.service`（Node 20，127.0.0.1:8790），更新后的源码、manifest 与 MP4 已通过 ECS 回环 health、清单、Range 和 hash 验证。历史公网 IP/Host 检查曾通过；最新复查中 `lens.xscxm.asia` 为 NXDOMAIN，HTTP 请求被备案拦截（403），443 不可连接，当前不能视作公网可用。
-- 微信开发者工具 2.02.2608070 已在保留正式 `miniprogramRoot` 的临时项目上打开当前构建并完成 CLI 预览编译；正式工程现已配置 AppID `wxf9d2785d37c216d4`。没有微信真机扫码通关证据。详见 [UNFINISHED.md](UNFINISHED.md)、[docs/TEST-REPORT.md](docs/TEST-REPORT.md) 与 [docs/DEPLOY-STATUS.md](docs/DEPLOY-STATUS.md)。
+- 阿里云 ECS 当前部署独立 `the-lens.service`（Node 20，127.0.0.1:8790）；历史回环已验证源码、旧 manifest 与 MP4 的 health、清单、Range 和 hash。仓库当前六条退回 manifest 尚未有本轮 ECS 同步证据。历史公网 IP/Host 检查曾通过；最新复查中 `lens.xscxm.asia` 为 NXDOMAIN，HTTP 请求被备案拦截（403），443 不可连接，当前不能视作公网可用。
+- 微信开发者工具 2.02.2608070 已用用户确认的测试 AppID `wx2d93fdfdf96aa297` 在当前构建隔离副本中完成 `open` 与 `preview`，预览包报告 4,038,314 bytes；交付工程仍保留正式配置 `wxf9d2785d37c216d4`，两者没有混用。没有微信真机扫码通关证据。详见 [UNFINISHED.md](UNFINISHED.md)、[docs/TEST-REPORT.md](docs/TEST-REPORT.md) 与 [docs/WECHAT-CLI-VERIFICATION.md](docs/WECHAT-CLI-VERIFICATION.md)。
 
 ## 构建运行时包
 
@@ -31,7 +31,7 @@ npm run build
 npm start
 ```
 
-打开 `http://127.0.0.1:8787/`。预览服务只绑定本机回环地址，支持基本资源读取和路径穿越拒绝。用开发者工具或浏览器检查横屏/窄屏、安全区、鼠标/触摸绘线、观星拖动、暂停、设置、存档恢复和结尾。浏览器体验是功能预览，不是微信真机证据。
+打开 `http://127.0.0.1:8787/`；若该端口已有旧进程，可用 `LENS_PREVIEW_PORT=8789 npm start` 并打开 `http://127.0.0.1:8789/`。预览服务只绑定本机回环地址，支持 MP4 草稿的 `video/mp4` 响应、基本资源读取和路径穿越拒绝。用浏览器检查横屏/窄屏、安全区、鼠标/触摸绘线、观星拖动、暂停、设置、存档恢复、片尾和六条 CG 审核预览。浏览器体验是功能预览，不是微信真机证据。
 
 ## 微信开发者工具
 
