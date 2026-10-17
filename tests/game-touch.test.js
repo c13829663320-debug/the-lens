@@ -375,6 +375,21 @@ test('bridge rescue cannot be dismissed before the fixed event completes', () =>
   assert.equal(labels.includes('抓住小花'), true);
 });
 
+test('S03 continue feedback follows the recorded viewing choice', () => {
+  const game = Object.create(Game.prototype);
+  const dialogs = [];
+  game.model = { scene: { id: 'S03', outro: [{ speaker: '动作', text: '默认片段' }] }, state: { choices: { S03_art: 'process' } } };
+  game.dialogue = lines => dialogs.push(lines);
+
+  game.proceed();
+  assert.match(dialogs[0][0].text, /看完画师试探/);
+
+  dialogs.length = 0;
+  game.model.state.choices.S03_art = 'skip';
+  game.proceed();
+  assert.equal(dialogs[0][0].text, '默认片段');
+});
+
 test('bridge rescue resumes the saved action after interruption at either step', async () => {
   const adapter = storageAdapter();
   const initial = createS05Model().state;
