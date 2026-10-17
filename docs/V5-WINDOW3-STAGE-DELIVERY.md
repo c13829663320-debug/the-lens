@@ -4,7 +4,7 @@
 窗口：美术、视听、交互体验与品质验证  
 共享基线：`main`，本轮复核起点为 `1206c89`（包含六条真实 CG 草稿和 S08 静态候选）；窗口三交付单最初提交链为 `033e59b`、`902461d`、`3a149ca`、`f901f78`、`68992f1`。当前工作树存在其他窗口未提交的客户端、媒体预览和构建产物改动，本单不包含、不覆盖这些改动。
 
-本单只报告共享工作区中能由文件、命令或已有测试记录证明的事实。Seedance S01、S10、S02、S05、S09 和片尾草稿没有获得美术批准前，全部保持 `draft_needs_art_review`、`canonical:false`，不称为正式接入。S03、S04、S06、S07 和 S08 视频仍是 `pending_generation`，不创建占位文件；S08 静态候选单独记录，仍不进入运行时映射。
+本单只报告共享工作区中能由文件、命令或已有测试记录证明的事实。2026-10-17 窗口三已完成 S01、S10、S02、S05、S09 和片尾六条草稿的逐秒美术确认，六条均为 `rejected`：S10 复用同一安睡舱人物、片头未从黑场进入，且三角符号、熄灯强度和红色指示灯越过边界；S01、S02、S05、S09 和片尾的逐条缺陷见审核记录。当前没有视频获得 `approved`，不称为正式接入。S03、S04、S06、S07 和 S08 视频仍是 `pending_generation`，不创建占位文件；S08 静态候选单独记录，仍不进入运行时映射。逐条证据见 [`docs/cg-review/CG-ART-REVIEW-20261017.md`](cg-review/CG-ART-REVIEW-20261017.md)。
 
 ## 1. 当前已完成的实际功能
 
@@ -23,8 +23,8 @@
 
 ### CG 和媒体状态
 
-- `server/media/` 当前有六条可读取 MP4：S01、S10、S02、S05、S09 和片尾。它们均为 1280×720、24fps、H.264/AAC，manifest 的 bytes/SHA 与文件一致，状态全部为 `draft_needs_art_review`、`canonical:false`；完整记录见 [`server/media/manifest.json`](../server/media/manifest.json) 和 [`docs/CG-GENERATION.md`](CG-GENERATION.md)。
-- S01 接触表显示建筑构图与 canonical S01 不同；六条视频均只能作为独立草稿预览，不能替换静帧或宣称正式接入。`data/media.js` 的生产 `baseUrl`/`clips` 仍为空；其他窗口的 browser-only `previewClips` 未在本交付单中视为生产接入。
+- `server/media/` 当前有六条可读取 MP4：S01、S10、S02、S05、S09 和片尾。它们均为 1280×720、24fps、H.264/AAC，manifest 的 bytes/SHA 与文件一致；六条均为 `rejected`、`canonical:false`。完整记录见 [`server/media/manifest.json`](../server/media/manifest.json)、[`docs/CG-GENERATION.md`](CG-GENERATION.md) 和逐条审核单。
+- 被退回的视频仍保留在本地目录供重做对照，但服务端过滤 `rejected`，草稿也不进入客户端生产 `clips`。`data/media.js` 的生产 `baseUrl`/`clips` 仍为空；其他窗口的 browser-only `previewClips` 不视为生产接入。
 - `assets/scenes/scene_S08_memory_1280_v1.jpg` 是已核对尺寸、解码和 SHA 的暖色构图候选，但来源为处理/转码产物，缺少正式图生图回传证据；`data/chapter.js` 的 `S08.memory` 和 `docs/asset-runtime.json` 保持未接入。
 - 阿里云服务、Range/健康检查和部署说明属于媒体后端窗口；窗口三只做资源状态和体验验收，不把服务端已有文件视作本窗口已重新部署或已通过真机验证。
 
@@ -51,7 +51,8 @@
 ## 2. 正在开发或待验收的功能
 
 - S01：逐帧美术构图、人物/空间一致性、音频听感和审批结论。结论只能是 `approved`、`rejected` 或继续 `draft_needs_art_review`；在 `approved + hash + 元数据 + 审核人` 齐全前不得进入生产 manifest。
-- S10 旧时代蒙太奇、S02 食品区显影、S05 断桥救援、S09 炭画与五点、片尾晨光：文件已存在，但仍为 `draft_needs_art_review`，尚无可接入文件。
+- S10 旧时代蒙太奇：已完成确认并写入 `rejected`，需要修正安睡舱人物、片头黑场和旧设备标识/熄灯边界后重做。
+- S02 食品区、S05 断桥、S09 炭画与片尾晨光：已完成确认并写入 `rejected`，需要新版本后重新审核。
 - S03、S04、S06、S07 和 S08 视频：只有镜头表和提示词，保持 `pending_generation`。
 - S08 囚禁洞口历史影像底图：存在一个经处理的构图候选，但不是正式图生图回传；`asset-runtime.json` 仍只有 S08 reality，memory 必须保持 `null`，不得用其他场景或占位图替代。
 - 独立角色透明动作帧、独立透镜五刻点图标、洞内实体道具图标和专用事故/鸟鸣/洞穴/影像声：目前是资源需求，不以概念图或合成占位音冒充完成。
@@ -76,13 +77,13 @@
 
 | 场景 | 必查画面/动作 | 音频检查 | 当前结论 |
 |---|---|---|---|
-| S10 安睡舱 | 旧时代档案、机械手放镜、无新增角色和可读广告字 | 环境声不冒充剧情对白 | 静帧可用；CG `draft_needs_art_review` |
-| S01 商场外景 | 现实/影像空间关系、建筑立柱和地面边界；镜头首中尾稳定 | 风声无语音/音乐侵权 | 视频存在但构图不符，`draft_needs_art_review` |
-| S02 食品区 | 影像食物不可拿取，关镜后真实罐头行动成立 | 切换 cue 与成功 cue 不抢对白 | 静帧和玩法可用；CG `draft_needs_art_review` |
-| S05 断桥 | 影像桥不承重，小花受伤、阿迟抓住、族长救援固定 | 落石/救援专用声尚缺 | 玩法因果固定；CG `draft_needs_art_review` |
+| S10 安睡舱 | 旧时代档案、机械手放镜、无新增角色和可读广告字；现有片头未从黑场进入、人物复用、三角符号、熄灯强度和红灯均不合格 | 环境声不冒充剧情对白；目标设备听感未验收 | CG `rejected` |
+| S01 商场外景 | 现实/影像空间关系、建筑立柱和地面边界；现有视频不是同构商场 | 风声无语音/音乐侵权 | CG `rejected` |
+| S02 食品区 | 影像食物不可拿取，关镜后真实罐头行动成立；角色和标签不合格 | 切换 cue 与成功 cue 不抢对白 | CG `rejected` |
+| S05 断桥 | 影像桥不承重，小花受伤、阿迟抓住、族长救援固定；现有现代高架不合格 | 落石/救援专用声尚缺 | CG `rejected` |
 | S08 囚禁洞口 | 现实洞口、木栅、地平线位置必须保留；候选 memory 未接入 | 洞穴/失真/断电专用声尚缺 | 仅 reality 可用；memory `null`，视频/底图待审 |
-| S09 洞穴 | 断电后画迹、五点、裂隙和木枝均为实体，不产生魔法光 | 洞穴/风尘专用声尚缺 | 资源可用；完整人工流程待验 |
-| 片尾晨光 | 小花端饭、看新画和裂隙，不显示阿迟去向或奇迹彩色 | 风声淡出、片名黑场顺序 | 静帧/逻辑可用；CG `draft_needs_art_review` |
+| S09 洞穴 | 断电后画迹、五点、裂隙和木枝均为实体，不产生魔法光；现有视频三个发光点不合格 | 洞穴/风尘专用声尚缺 | CG `rejected` |
+| 片尾晨光 | 小花端饭、看新画和裂隙，不显示阿迟去向或奇迹彩色；现有视频四个发光点不合格 | 风声淡出、片名黑场顺序 | CG `rejected` |
 
 ### 设备适配与回归记录
 
@@ -98,7 +99,11 @@
 
 ### 本次窗口三提交
 
-- `docs/V5-WINDOW3-STAGE-DELIVERY.md`（新增；本交付单）。
+- `README.md`（同步六条草稿审核结论和媒体发布边界）。
+- `server/media/manifest.json`（六条真实 MP4 的审核状态、退回原因和 `canonical:false`）。
+- `docs/CG-PLAN.md`、`docs/CG-GENERATION.md`、`docs/CG-SHOTLIST.md`（镜头计划、生成记录和镜头表状态）。
+- `docs/cg-review/CG-ART-REVIEW-20261017.md`（新增；六条逐秒美术确认记录）。
+- `docs/V5-WINDOW3-STAGE-DELIVERY.md`（本交付单）。
 
 ### 窗口三负责维护的现有文件范围
 
@@ -109,7 +114,7 @@
 
 ### 共享工作树中观察到、但本窗口没有修改的文件
 
-窗口三没有修改公共客户端、剧情、媒体后端或构建产物。当前 `main` 工作树干净；公共文件的归属、修改和最终集成仍按本单责任矩阵执行，`dist/**` 只能由窗口一通过构建生成。
+窗口三没有修改公共客户端、剧情、媒体后端代码或构建产物；仅维护了媒体审核 manifest 的数据状态。当前共享工作树仍存在其他窗口未提交的 `data/media.js`、`ui/game.js`、`dist/**`、测试和工具改动，本单不覆盖、不代替这些成果；`dist/**` 仍由窗口一负责最终构建集成。
 
 ## 4. 使用或新增的公共接口
 
@@ -139,18 +144,18 @@
 - 需要窗口二确认镜头动作、角色状态、S05 固定救援、S09 断电推进和片尾红线与最终剧本一致。
 - 需要媒体后端窗口提供 S01 审核后的真实文件、hash、ffprobe 元数据、manifest 状态和 HTTPS/Range 证据；没有这些证据不改 `data/media.js`。
 - 需要部署/发布窗口提供 DNS A、TLS、Nginx/systemd 外网验证、微信合法域名、正式 AppID 和真机限制记录。
-- 需要美术/声音审核人对 S01 给出书面状态，并对后续成片逐镜头签字；生成平台任务完成不等于艺术批准。
+- 六条均需按审核单重做后再审；S10 需特别修正安睡舱人物差异、片头黑场和旧设备标识/熄灯边界。生成平台任务完成不等于艺术批准。
 
 ## 7. 已执行的测试及真实结果
 
 本轮在共享工作树执行，命令均返回退出码 0：
 
-- `npm test`：共享工作树当前 58/58 通过；其中包含其他窗口未提交的浏览器 draft mapping 与交互测试，窗口三未修改这些测试或客户端文件。
+- `npm test`：共享工作树当前 61/61 通过；其中包含其他窗口未提交的浏览器 draft mapping 与交互测试，窗口三未修改这些测试或客户端文件。
 - `npm run check`：退出码 0，`scenes: 10`、`backgroundReferences: 16`、`missing: 0`、`requiredMemoryLayers: 1`、`missingRequiredMemoryLayers: ["S08.memory"]`；S08 缺失是当前明确待生成项，不是被占位资源掩盖的错误。
-- `npm run build`：为避免覆盖其他窗口未提交的 `dist/**`，在 `git archive HEAD` 的隔离副本执行成功，输出 `runtimeBytes: 4038632`、`dependencyCount: 0`；当前工作树的 `dist/**` 未由窗口三重建。
+- `npm run build`：为避免覆盖其他窗口未提交的 `dist/**`，在当前工作树的临时隔离副本执行成功，输出 `runtimeBytes: 4038975`、`dependencyCount: 0`；当前工作树的 `dist/**` 未由窗口三重建。
 - `npm --prefix server test`：2/2 通过，覆盖 Range、HEAD、manifest 过滤、错误码、CORS 条件和路径穿越。
 - 只读资源映射核验：运行时映射 34 个唯一引用，`missingReferences: 0`；43 个映射运行时文件 `hashMismatches: 0`、`invalidMappedDimensions: 0`；记录的压缩图片为 `3363394` bytes，音频为 `293892` bytes。
-- 只读媒体核验：六条 manifest 文件均存在，实际字节数与登记一致，SHA-256 匹配；状态全部为 `draft_needs_art_review`，`canonical: false`。S08 候选另行核对为 1280×720 RGB/sRGB JPEG、288,072 bytes，未进入映射。
+- 只读媒体核验：六条 manifest 文件均存在，实际字节数与登记一致，SHA-256 匹配；六条均为 `rejected`、`canonical:false`。S08 候选另行核对为 1280×720 RGB/sRGB JPEG、288,072 bytes，未进入映射。
 - 资源审计记录：`docs/ASSET-AUDIT.md` 记载 43 张图片完整解码、转换图重解码、31 条原始清单 SHA/尺寸核对和 3 个 WAV 重解码通过；本单不把这些记录扩展成微信真机听感结论。
 - 浏览器视觉记录：1280x720 横屏和 390x844 竖屏 HUD 无按钮重叠；最新 390x844 全流程已覆盖 S02 真实罐头、S05 两步救援、S09 绘画/观星/撬石和片尾恢复，但不是微信真机验收。
 - 微信 CLI 记录：临时项目的 `open`/`preview` 返回 0，当前 `project.config.json` 的 AppID 为 `wxf9d2785d37c216d4`；仍没有真机扫码、音频、远程 CG 或正式上传证据。
@@ -158,8 +163,8 @@
 
 ## 8. 当前最需要其他窗口配合的事项
 
-1. 对 S01、S10、S02、S05、S09 和片尾草稿完成逐帧美术和音频审核，分别明确 `approved`、`rejected` 或继续 `draft_needs_art_review`，不要仅凭生成任务 `completed` 判断。
-2. 对 S03/S04/S06/S07/S08 视频回传真实生成文件和元数据；没有文件继续保持 `pending_generation`。六条现有视频必须逐镜头完成美术签字，不能只凭任务完成状态放行。
+1. 六条草稿按审核单重做并重新提交，尤其是 S10 的人物差异、片头黑场和旧设备标识/熄灯边界；重做前不得进入 canonical。
+2. 对 S03/S04/S06/S07/S08 视频回传真实生成文件和元数据；没有文件继续保持 `pending_generation`。新版本必须带任务、提示词、hash 和逐镜头签字，不能只凭任务完成状态放行。
 3. 由媒体后端窗口补齐实际部署证据，并与窗口一确认客户端的远程媒体回退范围。
 4. 由窗口一和窗口二完成绘画、观星、撬石、片尾的完整人工流程，再由窗口三做视觉误导、操作歧义和音画同步复核。
 5. 提供正式 AppID、微信合法域名和至少一台真机的横屏/安全区/音频/视频原生层记录；开发者工具和浏览器只能作为预检。

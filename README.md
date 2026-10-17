@@ -8,7 +8,7 @@
 
 - 本地项目测试：`npm test` 通过 55/55；`server/` 测试通过 2/2；`npm run check` 检查 10 个场景、16 个实际背景引用、路径缺失 0，同时明确报告必需但尚未提供的 `S08.memory`。微信构建成功，运行时 3,747,115 bytes，第三方运行时依赖 0。
 - 浏览器预览已在 390×844 视口从标题完整触控游玩至片尾，覆盖真实罐头拖取、断桥救援、洞穴绘画/观星/撬石，并验证刷新后恢复结尾。浏览器播放的 CG 和音频仍受自动播放策略影响。
-- S01、S10、S02、S05、S09 和片尾已有真实 Seedance 2.5 视频草稿，均已下载到 `server/media/` 并通过本机 ffprobe/ffmpeg 基础校验。全部仍是待美术审阅草稿；接触表和任务记录见 `docs/CG-GENERATION.md`，本地 manifest 仅登记为 draft 预览，`data/media.js` 仍保持空 `baseUrl`，所以不能称为线上或游戏已接入。
+- S01、S10、S02、S05、S09 和片尾已有真实 Seedance 2.5 视频草稿，均已下载到 `server/media/` 并通过本机 ffprobe/ffmpeg 基础校验。当前审核结论为六条全部退回；没有任何视频达到 `approved + canonical:true`。浏览器审核映射仅在 `p.kind === 'browser'` 时启用，`data/media.js` 的生产 `baseUrl` 与 `clips` 仍为空。
 - 阿里云 ECS 当前部署独立 `the-lens.service`（Node 20，127.0.0.1:8790），更新后的源码、manifest 与 MP4 已通过 ECS 回环 health、清单、Range 和 hash 验证。历史公网 IP/Host 检查曾通过；最新复查中 `lens.xscxm.asia` 为 NXDOMAIN，HTTP 请求被备案拦截（403），443 不可连接，当前不能视作公网可用。
 - 微信开发者工具 2.02.2608070 已在保留正式 `miniprogramRoot` 的临时项目上打开当前构建并完成 CLI 预览编译；正式工程现已配置 AppID `wxf9d2785d37c216d4`。没有微信真机扫码通关证据。详见 [UNFINISHED.md](UNFINISHED.md)、[docs/TEST-REPORT.md](docs/TEST-REPORT.md) 与 [docs/DEPLOY-STATUS.md](docs/DEPLOY-STATUS.md)。
 
@@ -54,7 +54,7 @@ npm test
 npm start
 ```
 
-默认监听 `0.0.0.0:8080`，本地可用 `curl http://127.0.0.1:8080/health`。ECS 当前由 systemd 管理的 `the-lens.service` 监听 `127.0.0.1:8790`，Nginx 以 `lens.xscxm.asia` 代理；Docker/Compose 仅作为可选部署底座，不是当前 ECS 的运行方式。`server/media/manifest.json` 当前登记 S01 draft 预览，但 draft 未获 canonical 美术批准；`data/media.js` 空 `baseUrl` 会让客户端继续使用包内静帧。只有审核通过、登记 hash、启用 HTTPS 并完成微信域名配置后才可让客户端请求远程条目。服务不保存游戏存档、账号或密钥。
+默认监听 `0.0.0.0:8080`，本地可用 `curl http://127.0.0.1:8080/health`。ECS 当前由 systemd 管理的 `the-lens.service` 监听 `127.0.0.1:8790`，Nginx 以 `lens.xscxm.asia` 代理；Docker/Compose 仅作为可选部署底座，不是当前 ECS 的运行方式。`server/media/manifest.json` 当前保留六条真实文件的审核记录，六条均为 `rejected`，服务端会过滤 rejected 条目；`data/media.js` 空 `baseUrl` 和空生产 `clips` 会让客户端继续使用包内静帧，浏览器审核草稿不进入微信包。只有审核通过、登记 hash、启用 HTTPS 并完成微信域名配置后才可让客户端请求远程条目。服务不保存游戏存档、账号或密钥。
 
 ## 阿里云部署边界
 
